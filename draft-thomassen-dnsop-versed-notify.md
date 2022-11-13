@@ -329,7 +329,7 @@ case it could be that a new record type would provide a cleaner
 solution to all the new types of notification signaling. Eg.:
 
 parent.             IN NOTIFY  CDS     53   cds-scanner.parent.
-parent.             IN NOTIFY  CSYNC   53   csync-scanner.parent. 
+parent.             IN NOTIFY  CSYNC   53   csync-scanner.parent.
 child.parent.       IN NOTIFY  DNSKEY  5300 music.service.provider.
 
 ## Does multi-signer setups also need a NOTIFY(NS)?
