@@ -1,12 +1,12 @@
 ---
-title: Versed NOTIFY
-abbrev: Versed NOTIFY
+title: Generalized DNS Notifications
+abbrev: Generalized Notifications
 docname: draft-thomassen-dnsop-versed-notify-latest
 date: {DATE}
 category: std
 
 ipr: trust200902
-area: General
+area: Internet
 workgroup: DNSOP Working Group
 keyword: Internet-Draft
 
@@ -31,7 +31,7 @@ informative:
 
 --- abstract
 
-This document specifies Versed NOTIFY.
+This document specifies generalized DNS notifications.
 
 TO BE REMOVED: This document is being collaborated on in Github at:
 [https://github.com/peterthomassen/draft-thomassen-dnsop-versed-notify](https://github.com/peterthomassen/draft-thomassen-dnsop-versed-notify).
@@ -56,6 +56,11 @@ significant problems. However, just as in the NOTIFY(SOA) case, a new
 set of notification types will have a major positive benefit by
 allowing the DNS infrastructure to completely sidestep these
 inefficiencies.
+
+There are no DNS protocol changes introduced by this document.
+
+There are, however, proposals for how to interpret a wider range of
+DNS messages that are already allowed (but not used) by the protocol.
 
 
 Readers are expected to be familiar with DNSSEC, including [@!RFC4033],
