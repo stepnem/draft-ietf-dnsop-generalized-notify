@@ -206,8 +206,10 @@ records, as they are well suited to this:
 
 In the zone “parent.”:
 
-_cds-notifications.parent.   IN SRV n m  53 cds-scanner.parent.
-_csync-notifications.parent. IN SRV n m  53 csync-scanner.parent.
+```
+_cds-notifications.parent.   IN SRV n m  53 scanner.parent.
+_csync-notifications.parent. IN SRV n m  53 scanner.parent.
+```
 
 ## How to Interpret CDS/CDNSKEY and CSYNC Notifications
 
@@ -252,8 +254,10 @@ record that documents the wanted address for DNSKEY notifications.
 
 In analogy with the other cases, but here in the zone “child.parent.”:
 
+```
 _dnskey-notification.child.parent.   IN SRV n m 53 scanner.signerA.
 _dnskey-notification.child.parent.   IN SRV n m 53 scanner.signerB.
+```
 
 should act as a trigger for the signer that whenever there are changes
 to the DNSKEY RRset it should send a corresponding NOTIFY(DNSKEY) to
@@ -328,11 +332,13 @@ completely other scenarios than are described here. If that is the
 case it could be that a new record type would provide a cleaner
 solution to all the new types of notification signaling. Eg.:
 
-parent.             IN NOTIFY  CDS     53   cds-scanner.parent.
-parent.             IN NOTIFY  CSYNC   53   csync-scanner.parent.
+```
+parent.             IN NOTIFY  CDS     53   scanner.parent.
+parent.             IN NOTIFY  CSYNC   53   scanner.parent.
 child.parent.       IN NOTIFY  DNSKEY  5300 music.service.provider.
+```
 
-## Does multi-signer setups also need a NOTIFY(NS)?
+## Do multi-signer setups also need a NOTIFY(NS)?
 
 This can be argued both ways.
 
@@ -362,8 +368,6 @@ RRset. Individual signers (as in DNS service providers) may want to be
 able to make such changes independently of the other contents of the
 zone. See previous section.
 
-
-
 # Security Considerations
 
 The original NOTIFY specification (RFC 1996) sidesteps most security
@@ -386,8 +390,6 @@ CSYNC or DNSKEY RRset).
 Hence the amplification attack potential of generalized Notifications
 is the same as for the original NOTIFY(SOA), which has never been
 found to be useful for amplification attacks.
-
-
 
 {backmatter}
 
