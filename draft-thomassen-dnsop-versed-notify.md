@@ -133,8 +133,8 @@ large number of delegations this is rather costly, especially as it is
 only a very small number of the signed delegations that will have
 updated the CDS or CDNSKEY record between two scanning runs.
 
-Frequent scanning: costly. Infrequent scanning: slower convergence
-(i.e. delay until the DS in the parent is updated).
+Frequent scanning is costly. Infrequent scanning causes slower
+convergence (i.e. delay until the DS in the parent is updated).
 
 ## CSYNC Scanners
 
@@ -142,12 +142,12 @@ This is basically the same problem as for the CDS / CDNSKEY scanners:
 large number of delegations vs infrequent updates to the CSYNC record
 in the child zones.
 
-Frequent scanning: costly. Infrequent scanning: slower convergence
+Frequent scanning is costly. Infrequent scanning causes slower convergence
 (i.e. updated delegation information in the parent).
 
 ## Multi-Signer Setups
 
-Draft-foo-bar-mutli-signer describes processes for managing signed
+Draft-foo-bar-multi-signer describes processes for managing signed
 zones using multiple semi-independent “signers” (i.e. services that
 take an unsigned zone, sign it using unique DNSKEYs and publish the
 zone on the public Internet. The most common current setup for
@@ -167,7 +167,8 @@ multi-signer controller must poll frequently to minimize the potential
 outage window between one signer changing its version of the DNSKEY
 RRset and the controller noticing and re-synchronizing all signers.
 
-Frequent scanning: costly. Infrequent scanning: slower convergence (i.e. longer potential outage).
+Frequent scanning: costly. Infrequent scanning: slower convergence
+(i.e. longer potential outage).
 
 # CDS/CDNSKEY and CSYNC Notifications
 
@@ -202,7 +203,7 @@ is known, and because the parent obviously controls the contents of
 its own zone the simplest solution is for the parent to publish the
 address where it prefers to have notifications sent. To be slightly
 more general than just using an address record we propose to use SRV
-records, as they are well suited to this:
+records, as they are well suited to this.
 
 In the zone “parent.”:
 
@@ -255,8 +256,8 @@ record that documents the wanted address for DNSKEY notifications.
 In analogy with the other cases, but here in the zone “child.parent.”:
 
 ```
-_dnskey-notification.child.parent.   IN SRV n m 53 scanner.signerA.
-_dnskey-notification.child.parent.   IN SRV n m 53 scanner.signerB.
+_dnskey-notification.child.parent. IN SRV n m 53 scanner.signerA.
+_dnskey-notification.child.parent. IN SRV n m 53 scanner.signerB.
 ```
 
 should act as a trigger for the signer that whenever there are changes
@@ -333,9 +334,9 @@ case it could be that a new record type would provide a cleaner
 solution to all the new types of notification signaling. Eg.:
 
 ```
-parent.             IN NOTIFY  CDS     53   scanner.parent.
-parent.             IN NOTIFY  CSYNC   53   scanner.parent.
-child.parent.       IN NOTIFY  DNSKEY  5300 music.service.provider.
+parent.         IN NOTIFY  CDS     53   scanner.parent.
+parent.         IN NOTIFY  CSYNC   53   scanner.parent.
+child.parent.   IN NOTIFY  DNSKEY  5300 music.service.provider.
 ```
 
 ## Do multi-signer setups also need a NOTIFY(NS)?
