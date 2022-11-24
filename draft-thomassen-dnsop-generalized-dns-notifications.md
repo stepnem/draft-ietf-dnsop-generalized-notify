@@ -1,7 +1,7 @@
 ---
 title: Generalized DNS Notifications
 abbrev: Generalized Notifications
-docname: draft-thomassen-dnsop-versed-notify-latest
+docname: draft-thomassen-dnsop-generalized-dns-notifications-latest
 date: {DATE}
 category: std
 
@@ -34,7 +34,7 @@ informative:
 This document specifies generalized DNS notifications.
 
 TO BE REMOVED: This document is being collaborated on in Github at:
-[https://github.com/peterthomassen/draft-thomassen-dnsop-versed-notify](https://github.com/peterthomassen/draft-thomassen-dnsop-versed-notify).
+[https://github.com/peterthomassen/draft-thomassen-dnsop-generalized-dns-notifications](https://github.com/peterthomassen/draft-thomassen-dnsop-generalized-dns-notifications).
 The most recent working version of the document, open issues, etc. should all be
 available there.  The authors (gratefully) accept pull requests.
 
@@ -397,6 +397,6 @@ found to be useful for amplification attacks.
 
 # Change History (to be removed before publication)
 
-* draft-thomassen-dnsop-versed-notify-00
+* draft-thomassen-dnsop-generalized-dns-notifications-00
 
 > Initial public draft.

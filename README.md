@@ -1,10 +1,10 @@
-#  Versed NOTIFY
+#  Generalized DNS Notifications
 
-## draft-thomassen-dnsop-versed-notify
+## draft-thomassen-dnsop-generalized-dns-notifications
 
-* [Editor's Copy](https://peterthomassen.github.io/draft-thomassen-dnsop-versed-notify/#go.draft-thomassen-dnsop-versed-notify-latest.html)
-* [Individual Draft](https://datatracker.ietf.org/doc/draft-thomassen-dnsop-versed-notify/)
-* [Compare Editor's Copy to Individual Draft](https://peterthomassen.github.io/dns-alt-svc/#go.draft-thomassen-dnsop-versed-notify-latest.diff)
+* [Editor's Copy](https://peterthomassen.github.io/draft-thomassen-dnsop-generalized-dns-notifications/#go.draft-thomassen-dnsop-generalized-dns-notifications-latest.html)
+* [Individual Draft](https://datatracker.ietf.org/doc/draft-thomassen-dnsop-generalized-dns-notifications/)
+* [Compare Editor's Copy to Individual Draft](https://peterthomassen.github.io/dns-alt-svc/#go.draft-thomassen-dnsop-generalized-dns-notifications-latest.diff)
 
 ## Building the Draft
 
