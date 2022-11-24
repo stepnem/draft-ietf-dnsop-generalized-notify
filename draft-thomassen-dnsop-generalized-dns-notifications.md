@@ -63,17 +63,17 @@ There are, however, proposals for how to interpret a wider range of
 DNS messages that are already allowed (but not used) by the protocol.
 
 
-Readers are expected to be familiar with DNSSEC, including [@!RFC4033],
-[@!RFC4034], [@!RFC4035], [@!RFC6781], [@!RFC7344], [@!RFC7477], [@!RFC7583],
-and [@!RFC8901].
+Readers are expected to be familiar with DNSSEC, including {{!RFC4033}},
+{{!RFC4034}}, {{!RFC4035}}, {{!RFC6781}}, {{!RFC7344}}, {{!RFC7477}},
+{{!RFC7583}}, and {{!RFC8901}}.
 
 ## Requirements Notation
 
 The key words "**MUST**", "**MUST NOT**", "**REQUIRED**", "**SHALL**", "**SHALL
 NOT**", "**SHOULD**", "**SHOULD NOT**", "**RECOMMENDED**", "**NOT
 RECOMMENDED**", "**MAY**", and "**OPTIONAL**" in this document are to be
-interpreted as described in BCP 14 [@!RFC2119] [@!RFC8174] when, and only when,
-they appear in all capitals, as shown here.
+interpreted as described in BCP 14 {{!RFC2119}} {{!RFC8174}} when, and only
+when, they appear in all capitals, as shown here.
 
 
 # Costs and Dangers of Slow Convergence
@@ -210,12 +210,10 @@ address where it prefers to have notifications sent. To be slightly
 more general than just using an address record we propose to use SRV
 records, as they are well suited to this.
 
-In the zone “parent.”:
+In the zone `parent.`:
 
-```
-_cds-notifications.parent.   IN SRV n m  53 scanner.parent.
-_csync-notifications.parent. IN SRV n m  53 scanner.parent.
-```
+    _cds-notifications.parent.   IN SRV n m  53 scanner.parent.
+    _csync-notifications.parent. IN SRV n m  53 scanner.parent.
 
 ## How to Interpret CDS and CSYNC Notifications
 
@@ -271,12 +269,10 @@ multi-signer controller) has the ability to insert or modify RRsets in
 the child zone. Therefore the controller should be able to insert a
 record that documents the wanted address for DNSKEY notifications.
 
-In analogy with the other cases, but here in the zone “child.parent.”:
+In analogy with the other cases, but here in the zone `child.parent.`:
 
-```
-_dnskey-notification.child.parent. IN SRV n m 53 scanner.signerA.
-_dnskey-notification.child.parent. IN SRV n m 53 scanner.signerB.
-```
+    _dnskey-notification.child.parent. IN SRV n m 53 scanner.signerA.
+    _dnskey-notification.child.parent. IN SRV n m 53 scanner.signerB.
 
 should act as a trigger for the signer that whenever there are changes
 to the DNSKEY RRset it should send a corresponding NOTIFY(DNSKEY) to
@@ -351,11 +347,9 @@ completely other scenarios than are described here. If that is the
 case it could be that a new record type would provide a cleaner
 solution to all the new types of notification signaling. Eg.:
 
-```
-parent.         IN NOTIFY  CDS     53   scanner.parent.
-parent.         IN NOTIFY  CSYNC   53   scanner.parent.
-child.parent.   IN NOTIFY  DNSKEY  5300 music.service.provider.
-```
+    parent.         IN NOTIFY  CDS     53   scanner.parent.
+    parent.         IN NOTIFY  CSYNC   53   scanner.parent.
+    child.parent.   IN NOTIFY  DNSKEY  5300 music.service.provider.
 
 ## Do multi-signer setups also need a NOTIFY(NS)?
 
@@ -413,8 +407,7 @@ found to be useful for amplification attacks.
 In any case, NOTIFY consumers MAY configure rate limits to address
 concerns about the impact of unsolicited NOTIFY messages.
 
-{backmatter}
-
+--- back
 
 # Change History (to be removed before publication)
 
