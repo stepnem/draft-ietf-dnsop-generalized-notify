@@ -150,20 +150,20 @@ Frequent scanning is costly. Infrequent scanning causes slower convergence
 {{!I-D.wisser-dnssec-automation}} describes processes for managing signed
 zones using multiple semi-independent “signers” (i.e. services that
 take an unsigned zone, sign it using unique DNSKEYs and publish the
-zone on the public Internet). The most common current setup for
+zone on the public Internet). The setup most commonly discussed for
 multi-signer uses a “multi-signer controller”, which is a separate
 service responsible for keeping the signing and delegation information
 in sync across multiple signers.
 
-To keep information in sync the controller must scan the signers for
+To keep information in sync, the signers need to be scanned for
 current information about the DNSKEY RRset in each signer. The problem
 is that modern “signers” will typically do DNSKEY rollovers
 (especially ZSK rollovers) automatically without informing anyone
 else, because a single-signer setup is often assume (in which case the
 ZSK rollover is a matter completely internal to the signer).
 
-In the multi-signer case, this is not a correct assumption. The
-multi-signer controller therefore must poll frequently to minimize
+In the multi-signer case, this is not a correct assumption. It is
+therefore necessary to run frequent polls frequently to minimize
 the time window between one signer changing its version of the DNSKEY
 RRset and the controller noticing and re-synchronizing all signers.
 
@@ -289,15 +289,6 @@ recipient of the notification with the same three options as in the
 NOTIFY(CDS) and NOTIFY(CSYNC) cases: schedule an immediate check,
 delay regular checks and ignore.
 
-## Open Question For DNSKEY Notifications
-
-In a multi-signer setup there are multiple signers. How will the
-multi-signer controller know which signer sent the notification? As
-the number of signers for a particular zone is low (typically 2 or
-possibly 3), there is no major problem caused by not knowing which
-signer sent the notification and instead always check all the signers
-for updates to the DNSKEY RRset.
-
 # Who Should Send the Notifications?
 
 Because of the security model where a notification by itself never
@@ -350,6 +341,15 @@ solution to all the new types of notification signaling. Eg.:
     parent.         IN NOTIFY  CDS     53   scanner.parent.
     parent.         IN NOTIFY  CSYNC   53   scanner.parent.
     child.parent.   IN NOTIFY  DNSKEY  5300 music.service.provider.
+
+## Open Question For DNSKEY Notifications
+
+In a multi-signer setup there are multiple signers. How will the
+multi-signer controller know which signer sent the notification? As
+the number of signers for a particular zone is low (typically 2 or
+possibly 3), there is no major problem caused by not knowing which
+signer sent the notification and instead always check all the signers
+for updates to the DNSKEY RRset.
 
 # Out of Scope
 
