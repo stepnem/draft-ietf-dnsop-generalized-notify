@@ -219,24 +219,37 @@ _csync-notifications.parent. IN SRV n m  53 scanner.parent.
 
 ## How to Interpret CDS and CSYNC Notifications
 
-On receipt of a NOTIFY(CDS) for a particular child zone at the
-published address for CDS notifications the parent has the option of
-scheduling an immediate check of the CDS and CDNSKEY RRsets as
-published by that particular child zone. If the parent does this the
-convergence time (time for publication of a new CDS until propagation
-of the corresponding DS) will decrease significantly, thereby
-providing improved service to the child zone.
+Upon receipt of a NOTIFY(CDS) for a particular child zone at the
+published address for CDS notifications, the parent, roughly
+speaking, has three options:
 
-At its option the parent may also choose not to scan that particular
-child, at least not for some time, as that child is apparently able to
-send CDS notifications when it is rolling its KSK. This will decrease
-the scanning effort for the parent.
+  1. Schedule an immediate check of the CDS and CDNSKEY RRsets as
+     published by that particular child zone. If the parent does this
+     the convergence time (time for publication of a new CDS until
+     propagation of the corresponding DS) will decrease
+     significantly, thereby providing improved service to the child
+     zone.
 
-A third option is to ignore the notification, in which case the system
-works exactly as before.
+     The parent MAY keep state about children which are known to send
+     NOTIFY(CDS) messages, and reduce the periodic scanning frequency
+     accordingly (e.g. to every two weeks).
+     If a CDS/CDNSKEY change is then detected, the parent SHOULD clear
+     that state and revert to the default scanning schedule.
+     Parents introducing CDS/CDNSKEY scanning support at the same time
+     as NOTIFY(CDS) support are not in danger of breaking children's
+     scanning assumption, and MAY therefore us a low-frequency
+     scanning schedule in default mode.
 
-On receipt of a NOTIFY(CSYNC) to the published address for CSYNC
-notifications the parent has exactly the same options to choose among
+  2. Choose not to scan that particular child, at least not for some
+     time, as that child is apparently able to send CDS notifications
+     when it is rolling its KSK.
+     This will decrease the scanning effort for the parent.
+
+  3. Ignore the notification, in which case the system works exactly
+     as before.
+
+Upon receipt of a NOTIFY(CSYNC) to the published address for CSYNC
+notifications, the parent has exactly the same options to choose among
 as for the NOTIFY(CDS).
 
 # DNSKEY Notifications
