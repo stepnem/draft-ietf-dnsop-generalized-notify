@@ -84,7 +84,7 @@ had been updated in the primary. The basic idea was to augment the
 traditional “pull” mechanism (a periodic SOA query) with a “push”
 mechanism (a Notify) for a common case that was otherwise very
 inefficient (due to either slow convergence or wasteful overly
-frequent scanning of the primary for changes.
+frequent scanning of the primary for changes).
 
 Today we have similar issues with slow updates of DNS data in spite of
 the data having been published. The two most obvious cases are the
@@ -99,19 +99,19 @@ zone, but with individual sets of keys. One requirement for
 multi-signer setups to work is the ability of inserting additional
 DNSKEY records in each signer’s version of the zone. This is not the
 only multi-signer requirement, but it is the one that matters
-here. The problem here is that modern signers will automatically roll
-DNSSEC Zone Signing Keys without informing anyone, because ZSK
-rollovers are a local matter (as opposed to KSK rollovers that involve
-the parent).
+here. The problem here is that modern signers will commonly roll
+DNSSEC Zone Signing Keys automatically and without informing anyone,
+assuming a single-signer setup where ZSK rollovers are a local matter
+(as opposed to KSK rollovers that involve the parent).
 
 However, when the ZSKs of one signer are rolled the other signers will
 be unaware of this event. Having the individual signers sign DNSKEY
 RRsets where the ZSKs are not the same create a possibly broken
 signature chain and is therefore a dangerous situation. Eventually the
-signers will catch up, as multi-signer requires scanning of the DNSKEY
-RRsets of each signer to be able to compute the combined RRsets that
+signers will catch up, as multi-signer operators import each other's
+DNSKEY public key(s) to be able to compute the combined RRsets that
 should be published, but the period between the ZSK rollover in one
-signer and the other signers becoming aware constitute a period of
+signer and the other signers becoming aware constitutes a period of
 potential brokenness.
 
 # Efficiency Issues with DNS Scanning vs. Notification
@@ -150,7 +150,7 @@ Frequent scanning is costly. Infrequent scanning causes slower convergence
 Draft-foo-bar-multi-signer describes processes for managing signed
 zones using multiple semi-independent “signers” (i.e. services that
 take an unsigned zone, sign it using unique DNSKEYs and publish the
-zone on the public Internet. The most common current setup for
+zone on the public Internet). The most common current setup for
 multi-signer uses a “multi-signer controller”, which is a separate
 service responsible for keeping the signing and delegation information
 in sync across multiple signers.
@@ -159,16 +159,16 @@ To keep information in sync the controller must scan the signers for
 current information about the DNSKEY RRset in each signer. The problem
 is that modern “signers” will typically do DNSKEY rollovers
 (especially ZSK rollovers) automatically without informing anyone
-else, because the ZSK rollover is a completely internal matter to the
-signer of the zone.
+else, because a single-signer setup is often assume (in which case the
+ZSK rollover is a matter completely internal to the signer).
 
-Except that in the multi-signer case it isn’t. And therefore the
-multi-signer controller must poll frequently to minimize the potential
-outage window between one signer changing its version of the DNSKEY
+In the multi-signer case, this is not a correct assumption. The
+multi-signer controller therefore must poll frequently to minimize
+the time window between one signer changing its version of the DNSKEY
 RRset and the controller noticing and re-synchronizing all signers.
 
 Frequent scanning: costly. Infrequent scanning: slower convergence
-(i.e. longer potential outage).
+(i.e. longer potential inconsistency across signers).
 
 # CDS/CDNSKEY and CSYNC Notifications
 
