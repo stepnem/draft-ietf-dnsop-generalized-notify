@@ -172,16 +172,21 @@ Frequent scanning: costly. Infrequent scanning: slower convergence
 
 # CDS/CDNSKEY and CSYNC Notifications
 
+The RFC 1996 NOTIFY message sends a SOA record in the Query
+Section. We refer to this as a NOTIFY(SOA).
 By generalizing the concept of DNS Notify it is possible to address
 not only the original inefficiency (primary name server to secondary
 nameserver convergence) but also the problems with CDS/CDNSKEY, CSYNC
 and Multi-Signer scanning for zone updates.
 
-The RFC 1996 NOTIFY message sends a SOA record in the Query
-Section. We refer to this as a NOTIFY(SOA). The CDS/CDNSKEY
-inefficiency may be addressed by the child sending a NOTIFY(CDS) to an
-address where the parent listens for such notifications. The CSYNC
-inefficiency may similarly be addressed by the child sinding a
+The CDS/CDNSKEY inefficiency may be addressed by the child sending a
+NOTIFY(CDS) to an address where the parent listens for such notifications.
+To address the CDS/CDNSKEY dichotomy, NOTIFY(CDS) is defined to indicate
+any child-side changes pertaining to a upcoming update of DS records.
+Upon receipt of NOTIFY(CDS), the parent SHOULD initiate the same scan
+that would other be triggered based on a timer.
+
+The CSYNC inefficiency may similarly be addressed by the child sinding a
 NOTIFY(CSYNC) to an address where the parent is listening to CSYNC
 notifications.
 
@@ -194,7 +199,7 @@ protocol change is required, the only thing needed is specification of
 where to send the new types of Notifies and how to interpret them in
 the receiving end.
 
-## Where to send CDS/CDNSKEY and CSYNC Notifications
+## Where to send CDS and CSYNC Notifications
 
 In the case of NOTIFY(CDS) and NOTIFY(CSYNC) the ultimate recipient of
 the notification is the parent, to improve the speed and efficiency of
@@ -212,7 +217,7 @@ _cds-notifications.parent.   IN SRV n m  53 scanner.parent.
 _csync-notifications.parent. IN SRV n m  53 scanner.parent.
 ```
 
-## How to Interpret CDS/CDNSKEY and CSYNC Notifications
+## How to Interpret CDS and CSYNC Notifications
 
 On receipt of a NOTIFY(CDS) for a particular child zone at the
 published address for CDS notifications the parent has the option of
