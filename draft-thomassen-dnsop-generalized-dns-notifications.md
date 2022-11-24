@@ -147,7 +147,7 @@ Frequent scanning is costly. Infrequent scanning causes slower convergence
 
 ## Multi-Signer Setups
 
-Draft-foo-bar-multi-signer describes processes for managing signed
+{{!I-D.wisser-dnssec-automation}} describes processes for managing signed
 zones using multiple semi-independent “signers” (i.e. services that
 take an unsigned zone, sign it using unique DNSKEYs and publish the
 zone on the public Internet). The most common current setup for
