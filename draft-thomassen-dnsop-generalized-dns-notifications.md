@@ -386,7 +386,7 @@ changing the timing for when different checks are initiated.
 This mechanism and security model is reused for all the generalized
 NOTIFY messages.
 
-Another consideration that is necessary is whether generalized DNS
+Another consideration is whether generalized DNS
 Notifications can be used as an amplification attack. The answer seems
 to be “NO”, because the size of the generalized NOTIFY messages is
 mostly equal to the size of the response and it is also mostly equal
@@ -396,6 +396,9 @@ CSYNC or DNSKEY RRset).
 Hence the amplification attack potential of generalized Notifications
 is the same as for the original NOTIFY(SOA), which has never been
 found to be useful for amplification attacks.
+
+In any case, NOTIFY consumers MAY configure rate limits to address
+concerns about the impact of unsolicited NOTIFY messages.
 
 {backmatter}
 
