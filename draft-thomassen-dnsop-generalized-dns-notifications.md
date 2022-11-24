@@ -351,24 +351,6 @@ solution to all the new types of notification signaling. Eg.:
     parent.         IN NOTIFY  CSYNC   53   scanner.parent.
     child.parent.   IN NOTIFY  DNSKEY  5300 music.service.provider.
 
-## Do multi-signer setups also need a NOTIFY(NS)?
-
-This can be argued both ways.
-
-Against: The NS RRset (and possibly any in-bailiwick nameserver
-addresses) is part of the unsigned zone and must therefore be kept in
-sync regardless of any notifications.
-
-For: The typical multi-signer use case is where the unsigned zone is
-sent to more than one DNS service provider that both signs the zone
-and serves the resulting zone. For the DNS service provider to be able
-to serve the zone it is preferable to have the ability to control the
-names and addresses of the nameservers providing the service.
-
-If the conclusion is that NOTIFY(NS) is important for multi-signer
-then it is not difficult to add using the same design as for
-NOTIFY(DNSKEY).
-
 # Out of Scope
 
 In the multi-signer case, where the same zone is signed by multiple
