@@ -63,17 +63,17 @@ There are, however, proposals for how to interpret a wider range of
 DNS messages that are already allowed (but not used) by the protocol.
 
 
-Readers are expected to be familiar with DNSSEC, including [@!RFC4033],
-[@!RFC4034], [@!RFC4035], [@!RFC6781], [@!RFC7344], [@!RFC7477], [@!RFC7583],
-and [@!RFC8901].
+Readers are expected to be familiar with DNSSEC, including {{!RFC4033}},
+{{!RFC4034}}, {{!RFC4035}}, {{!RFC6781}}, {{!RFC7344}}, {{!RFC7477}},
+{{!RFC7583}}, and {{!RFC8901}}.
 
 ## Requirements Notation
 
 The key words "**MUST**", "**MUST NOT**", "**REQUIRED**", "**SHALL**", "**SHALL
 NOT**", "**SHOULD**", "**SHOULD NOT**", "**RECOMMENDED**", "**NOT
 RECOMMENDED**", "**MAY**", and "**OPTIONAL**" in this document are to be
-interpreted as described in BCP 14 [@!RFC2119] [@!RFC8174] when, and only when,
-they appear in all capitals, as shown here.
+interpreted as described in BCP 14 {{!RFC2119}} {{!RFC8174}} when, and only
+when, they appear in all capitals, as shown here.
 
 
 # Costs and Dangers of Slow Convergence
@@ -84,7 +84,7 @@ had been updated in the primary. The basic idea was to augment the
 traditional “pull” mechanism (a periodic SOA query) with a “push”
 mechanism (a Notify) for a common case that was otherwise very
 inefficient (due to either slow convergence or wasteful overly
-frequent scanning of the primary for changes.
+frequent scanning of the primary for changes).
 
 Today we have similar issues with slow updates of DNS data in spite of
 the data having been published. The two most obvious cases are the
@@ -99,19 +99,19 @@ zone, but with individual sets of keys. One requirement for
 multi-signer setups to work is the ability of inserting additional
 DNSKEY records in each signer’s version of the zone. This is not the
 only multi-signer requirement, but it is the one that matters
-here. The problem here is that modern signers will automatically roll
-DNSSEC Zone Signing Keys without informing anyone, because ZSK
-rollovers are a local matter (as opposed to KSK rollovers that involve
-the parent).
+here. The problem here is that modern signers will commonly roll
+DNSSEC Zone Signing Keys automatically and without informing anyone,
+assuming a single-signer setup where ZSK rollovers are a local matter
+(as opposed to KSK rollovers that involve the parent).
 
 However, when the ZSKs of one signer are rolled the other signers will
 be unaware of this event. Having the individual signers sign DNSKEY
 RRsets where the ZSKs are not the same create a possibly broken
 signature chain and is therefore a dangerous situation. Eventually the
-signers will catch up, as multi-signer requires scanning of the DNSKEY
-RRsets of each signer to be able to compute the combined RRsets that
+signers will catch up, as multi-signer operators import each other's
+DNSKEY public key(s) to be able to compute the combined RRsets that
 should be published, but the period between the ZSK rollover in one
-signer and the other signers becoming aware constitute a period of
+signer and the other signers becoming aware constitutes a period of
 potential brokenness.
 
 # Efficiency Issues with DNS Scanning vs. Notification
@@ -147,41 +147,46 @@ Frequent scanning is costly. Infrequent scanning causes slower convergence
 
 ## Multi-Signer Setups
 
-Draft-foo-bar-multi-signer describes processes for managing signed
+{{!I-D.wisser-dnssec-automation}} describes processes for managing signed
 zones using multiple semi-independent “signers” (i.e. services that
 take an unsigned zone, sign it using unique DNSKEYs and publish the
-zone on the public Internet. The most common current setup for
+zone on the public Internet). The setup most commonly discussed for
 multi-signer uses a “multi-signer controller”, which is a separate
 service responsible for keeping the signing and delegation information
 in sync across multiple signers.
 
-To keep information in sync the controller must scan the signers for
+To keep information in sync, the signers need to be scanned for
 current information about the DNSKEY RRset in each signer. The problem
 is that modern “signers” will typically do DNSKEY rollovers
 (especially ZSK rollovers) automatically without informing anyone
-else, because the ZSK rollover is a completely internal matter to the
-signer of the zone.
+else, because a single-signer setup is often assume (in which case the
+ZSK rollover is a matter completely internal to the signer).
 
-Except that in the multi-signer case it isn’t. And therefore the
-multi-signer controller must poll frequently to minimize the potential
-outage window between one signer changing its version of the DNSKEY
+In the multi-signer case, this is not a correct assumption. It is
+therefore necessary to run frequent polls frequently to minimize
+the time window between one signer changing its version of the DNSKEY
 RRset and the controller noticing and re-synchronizing all signers.
 
 Frequent scanning: costly. Infrequent scanning: slower convergence
-(i.e. longer potential outage).
+(i.e. longer potential inconsistency across signers).
 
 # CDS/CDNSKEY and CSYNC Notifications
 
+The RFC 1996 NOTIFY message sends a SOA record in the Query
+Section. We refer to this as a NOTIFY(SOA).
 By generalizing the concept of DNS Notify it is possible to address
 not only the original inefficiency (primary name server to secondary
 nameserver convergence) but also the problems with CDS/CDNSKEY, CSYNC
 and Multi-Signer scanning for zone updates.
 
-The RFC 1996 NOTIFY message sends a SOA record in the Query
-Section. We refer to this as a NOTIFY(SOA). The CDS/CDNSKEY
-inefficiency may be addressed by the child sending a NOTIFY(CDS) to an
-address where the parent listens for such notifications. The CSYNC
-inefficiency may similarly be addressed by the child sinding a
+The CDS/CDNSKEY inefficiency may be addressed by the child sending a
+NOTIFY(CDS) to an address where the parent listens for such notifications.
+To address the CDS/CDNSKEY dichotomy, NOTIFY(CDS) is defined to indicate
+any child-side changes pertaining to a upcoming update of DS records.
+Upon receipt of NOTIFY(CDS), the parent SHOULD initiate the same scan
+that would other be triggered based on a timer.
+
+The CSYNC inefficiency may similarly be addressed by the child sinding a
 NOTIFY(CSYNC) to an address where the parent is listening to CSYNC
 notifications.
 
@@ -194,7 +199,7 @@ protocol change is required, the only thing needed is specification of
 where to send the new types of Notifies and how to interpret them in
 the receiving end.
 
-## Where to send CDS/CDNSKEY and CSYNC Notifications
+## Where to send CDS and CSYNC Notifications
 
 In the case of NOTIFY(CDS) and NOTIFY(CSYNC) the ultimate recipient of
 the notification is the parent, to improve the speed and efficiency of
@@ -205,33 +210,44 @@ address where it prefers to have notifications sent. To be slightly
 more general than just using an address record we propose to use SRV
 records, as they are well suited to this.
 
-In the zone “parent.”:
+In the zone `parent.`:
 
-```
-_cds-notifications.parent.   IN SRV n m  53 scanner.parent.
-_csync-notifications.parent. IN SRV n m  53 scanner.parent.
-```
+    _cds-notifications.parent.   IN SRV n m  53 scanner.parent.
+    _csync-notifications.parent. IN SRV n m  53 scanner.parent.
 
-## How to Interpret CDS/CDNSKEY and CSYNC Notifications
+## How to Interpret CDS and CSYNC Notifications
 
-On receipt of a NOTIFY(CDS) for a particular child zone at the
-published address for CDS notifications the parent has the option of
-scheduling an immediate check of the CDS and CDNSKEY RRsets as
-published by that particular child zone. If the parent does this the
-convergence time (time for publication of a new CDS until propagation
-of the corresponding DS) will decrease significantly, thereby
-providing improved service to the child zone.
+Upon receipt of a NOTIFY(CDS) for a particular child zone at the
+published address for CDS notifications, the parent, roughly
+speaking, has three options:
 
-At its option the parent may also choose not to scan that particular
-child, at least not for some time, as that child is apparently able to
-send CDS notifications when it is rolling its KSK. This will decrease
-the scanning effort for the parent.
+  1. Schedule an immediate check of the CDS and CDNSKEY RRsets as
+     published by that particular child zone. If the parent does this
+     the convergence time (time for publication of a new CDS until
+     propagation of the corresponding DS) will decrease
+     significantly, thereby providing improved service to the child
+     zone.
 
-A third option is to ignore the notification, in which case the system
-works exactly as before.
+     The parent MAY keep state about children which are known to send
+     NOTIFY(CDS) messages, and reduce the periodic scanning frequency
+     accordingly (e.g. to every two weeks).
+     If a CDS/CDNSKEY change is then detected, the parent SHOULD clear
+     that state and revert to the default scanning schedule.
+     Parents introducing CDS/CDNSKEY scanning support at the same time
+     as NOTIFY(CDS) support are not in danger of breaking children's
+     scanning assumption, and MAY therefore us a low-frequency
+     scanning schedule in default mode.
 
-On receipt of a NOTIFY(CSYNC) to the published address for CSYNC
-notifications the parent has exactly the same options to choose among
+  2. Choose not to scan that particular child, at least not for some
+     time, as that child is apparently able to send CDS notifications
+     when it is rolling its KSK.
+     This will decrease the scanning effort for the parent.
+
+  3. Ignore the notification, in which case the system works exactly
+     as before.
+
+Upon receipt of a NOTIFY(CSYNC) to the published address for CSYNC
+notifications, the parent has exactly the same options to choose among
 as for the NOTIFY(CDS).
 
 # DNSKEY Notifications
@@ -253,12 +269,10 @@ multi-signer controller) has the ability to insert or modify RRsets in
 the child zone. Therefore the controller should be able to insert a
 record that documents the wanted address for DNSKEY notifications.
 
-In analogy with the other cases, but here in the zone “child.parent.”:
+In analogy with the other cases, but here in the zone `child.parent.`:
 
-```
-_dnskey-notification.child.parent. IN SRV n m 53 scanner.signerA.
-_dnskey-notification.child.parent. IN SRV n m 53 scanner.signerB.
-```
+    _dnskey-notification.child.parent. IN SRV n m 53 scanner.signerA.
+    _dnskey-notification.child.parent. IN SRV n m 53 scanner.signerB.
 
 should act as a trigger for the signer that whenever there are changes
 to the DNSKEY RRset it should send a corresponding NOTIFY(DNSKEY) to
@@ -274,15 +288,6 @@ action. In a multi-signer setup, though, this hint provides the
 recipient of the notification with the same three options as in the
 NOTIFY(CDS) and NOTIFY(CSYNC) cases: schedule an immediate check,
 delay regular checks and ignore.
-
-## Open Question For DNSKEY Notifications
-
-In a multi-signer setup there are multiple signers. How will the
-multi-signer controller know which signer sent the notification? As
-the number of signers for a particular zone is low (typically 2 or
-possibly 3), there is no major problem caused by not knowing which
-signer sent the notification and instead always check all the signers
-for updates to the DNSKEY RRset.
 
 # Who Should Send the Notifications?
 
@@ -333,29 +338,18 @@ completely other scenarios than are described here. If that is the
 case it could be that a new record type would provide a cleaner
 solution to all the new types of notification signaling. Eg.:
 
-```
-parent.         IN NOTIFY  CDS     53   scanner.parent.
-parent.         IN NOTIFY  CSYNC   53   scanner.parent.
-child.parent.   IN NOTIFY  DNSKEY  5300 music.service.provider.
-```
+    parent.         IN NOTIFY  CDS     53   scanner.parent.
+    parent.         IN NOTIFY  CSYNC   53   scanner.parent.
+    child.parent.   IN NOTIFY  DNSKEY  5300 music.service.provider.
 
-## Do multi-signer setups also need a NOTIFY(NS)?
+## Open Question For DNSKEY Notifications
 
-This can be argued both ways.
-
-Against: The NS RRset (and possibly any in-bailiwick nameserver
-addresses) is part of the unsigned zone and must therefore be kept in
-sync regardless of any notifications.
-
-For: The typical multi-signer use case is where the unsigned zone is
-sent to more than one DNS service provider that both signs the zone
-and serves the resulting zone. For the DNS service provider to be able
-to serve the zone it is preferable to have the ability to control the
-names and addresses of the nameservers providing the service.
-
-If the conclusion is that NOTIFY(NS) is important for multi-signer
-then it is not difficult to add using the same design as for
-NOTIFY(DNSKEY).
+In a multi-signer setup there are multiple signers. How will the
+multi-signer controller know which signer sent the notification? As
+the number of signers for a particular zone is low (typically 2 or
+possibly 3), there is no major problem caused by not knowing which
+signer sent the notification and instead always check all the signers
+for updates to the DNSKEY RRset.
 
 # Out of Scope
 
@@ -381,7 +375,7 @@ changing the timing for when different checks are initiated.
 This mechanism and security model is reused for all the generalized
 NOTIFY messages.
 
-Another consideration that is necessary is whether generalized DNS
+Another consideration is whether generalized DNS
 Notifications can be used as an amplification attack. The answer seems
 to be “NO”, because the size of the generalized NOTIFY messages is
 mostly equal to the size of the response and it is also mostly equal
@@ -392,8 +386,10 @@ Hence the amplification attack potential of generalized Notifications
 is the same as for the original NOTIFY(SOA), which has never been
 found to be useful for amplification attacks.
 
-{backmatter}
+In any case, NOTIFY consumers MAY configure rate limits to address
+concerns about the impact of unsolicited NOTIFY messages.
 
+--- back
 
 # Change History (to be removed before publication)
 
