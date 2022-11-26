@@ -43,7 +43,7 @@ available there.  The authors (gratefully) accept pull requests.
 # Introduction
 
 This document introduces a generalization of the DNS NOTIFY mechanism
-described in RFC 1996.
+described in {{!RFC1996}}.
 
 Traditional DNS notifications, which are here referred to as
 ”NOTIFY(SOA)”, are sent from a primary server to a secondary server to
@@ -78,7 +78,7 @@ when, they appear in all capitals, as shown here.
 
 # Costs and Dangers of Slow Convergence
 
-RFC 1996 introduced the concept of a DNS Notify message which was used
+{{!RFC1996}} introduced the concept of a DNS Notify message which was used
 to improve the convergence time for secondary servers when a DNS zone
 had been updated in the primary. The basic idea was to augment the
 traditional “pull” mechanism (a periodic SOA query) with a “push”
@@ -116,21 +116,17 @@ potential brokenness.
 
 # Efficiency Issues with DNS Scanning vs. Notification
 
-The original problem that RFC 1996 addressed was the problem of
+The original problem that {{!RFC1996}} addressed was the problem of
 optimization between frequent checking for new versions of a zone by a
-secondary and infrequent checking. Both are inefficient. NOTIFY
-transforms this into an efficient mechanism.
+secondary and infrequent checking.
+While it is possible to indicate how frequently checks should occur
+(via the SOA Refresh parameter), these checks did not allow catching
+zone changes that fall between checkpoints.
+NOTIFY replaces scheduled scanning with a more efficient mechanism.
 
 In modern DNS infrastructure there are several new scanning based
-inefficiencies that did not exist at the time of the writing of RFC
-1996.
-
-Not every zone runs a CDS or CSYNC scanner (today). However, for those
-that do, the problem is actually worse than in the traditional primary
-to secondary case. The reason is that in the original case the primary
-is able to indicate frequent changes are to be expected (via the SOA
-Refresh parameter). No equivalent mechanism exist for the new scanning
-services.
+inefficiencies that did not exist at the time of the writing of
+{{!RFC1996}}.
 
 ## CDS and CDNSKEY Scanners
 
@@ -142,6 +138,13 @@ updated the CDS or CDNSKEY record between two scanning runs.
 
 Frequent scanning is costly. Infrequent scanning causes slower
 convergence (i.e. delay until the DS in the parent is updated).
+
+Not every zone runs a CDS or CSYNC scanner (today). However, for those
+that do, the problem is actually worse than in the traditional primary
+to secondary case. The reason is that in the original case the primary
+is able to indicate how frequently changes are to be expected (via the
+SOA Refresh parameter). No equivalent mechanism exist for the new
+scanning services.
 
 ## CSYNC Scanners
 
@@ -179,7 +182,7 @@ Frequent scanning: costly. Infrequent scanning: slower convergence
 
 # CDS/CDNSKEY and CSYNC Notifications
 
-The RFC 1996 NOTIFY message sends a SOA record in the Query
+The {{!RFC1996}} NOTIFY message sends a SOA record in the Query
 Section. We refer to this as a NOTIFY(SOA).
 By generalizing the concept of DNS NOTIFY it is possible to address
 not only the original inefficiency (primary name server to secondary
@@ -225,41 +228,35 @@ In the zone `parent.`:
 ## How to Interpret CDS and CSYNC Notifications
 
 Upon receipt of a NOTIFY(CDS) for a particular child zone at the
-published address for CDS notifications, the parent, roughly
-speaking, has three options:
+published address for CDS notifications, the parent has two options:
 
   1. Schedule an immediate check of the CDS and CDNSKEY RRsets as
      published by that particular child zone.
 
-     The parent MAY keep state about children which are known to send
-     NOTIFY(CDS) messages, and reduce the periodic scanning frequency
+     The parent MAY reset the scanning timer for children for which
+     NOTIFY(CDS) is received, or reduce the periodic scanning frequency
      accordingly (e.g. to every two weeks).
-     If a CDS/CDNSKEY change is then detected, the parent SHOULD clear
-     that state and revert to the default scanning schedule.
+     This will decrease the scanning effort for the parent.
+     If a CDS/CDNSKEY change is then detected (without having received
+     a notification), the parent SHOULD clear that state and revert to
+     the default scanning schedule.
+
      Parents introducing CDS/CDNSKEY scanning support at the same time
      as NOTIFY(CDS) support are not in danger of breaking children's
      scanning assumption, and MAY therefore use a low-frequency
      scanning schedule in default mode.
 
-  2. Schedule an immediate check of the CDS and CDNSKEY RRsets as
-     published by that particular child zone.
-
-     Choose to reduce the scheduled scanning frequency for that
-     particular child zone, at least not for some time, as that child is
-     apparently able to send CDS notifications when it is rolling its
-     KSK.  This will decrease the scanning effort for the parent.
-
-  3. Ignore the notification, in which case the system works exactly
+  2. Ignore the notification, in which case the system works exactly
      as before.
 
-If the parent implements one of the first two options the convergence
-time (time between publication of a new CDS and propagation of the
-resulting DS) will decrease significantly, thereby providing improved
-service to the child zone.
+If the parent implements the first option, the convergence time (time
+between publication of a new CDS and propagation of the resulting DS)
+will decrease significantly, thereby providing improved service to the
+child zone.
 
 If the parent, in addition to scheduling an immediate check for the
 child zone of the notification, also choses to modify the scanning
-schedule (to be less frequent) the cost of providing the scanning
+schedule (to be less frequent), the cost of providing the scanning
 service will be reduced.
 
 Upon receipt of a NOTIFY(CSYNC) to the published address for CSYNC
@@ -318,9 +315,9 @@ support for generalized DNS notifications in the name servers used for
 signing.
 
 However, as multi-signer is strongly dependent on DNSKEY notifications
-(which can only be generated by the signing software) this does not
-alleviate the need for modifications also to signing software to
-support NOTIFY(DNSKEY).
+(which, in case of an automatic ZSK rollover, can only be generated by
+the signing software), this does not alleviate the need for
+modifications also to signing software to support NOTIFY(DNSKEY).
 
 # Timing Considerations
 
@@ -386,7 +383,7 @@ zone. See previous section.
 
 # Security Considerations
 
-The original NOTIFY specification (RFC 1996) sidesteps most security
+The original NOTIFY specification ({{!RFC1996}}) sidesteps most security
 issues by not relying on the information in the NOTIFY message in any
 way but instead only use it to set the timer until the next scheduled
 check (for the SOA record) to zero. Therefore it is impossible to
