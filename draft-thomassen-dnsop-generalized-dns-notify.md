@@ -1,7 +1,7 @@
 ---
 title: Generalized DNS Notifications
 abbrev: Generalized Notifications
-docname: draft-thomassen-dnsop-generalized-dns-notifications-latest
+docname: draft-thomassen-dnsop-generalized-dns-notify-latest
 date: {DATE}
 category: std
 
@@ -50,7 +50,7 @@ NOTIFY(DNSKEY), and quicker changes to a delegation's NS record set
 via NOTIFY(CSYNC).
 
 TO BE REMOVED: This document is being collaborated on in Github at:
-[https://github.com/peterthomassen/draft-thomassen-dnsop-generalized-dns-notifications](https://github.com/peterthomassen/draft-thomassen-dnsop-generalized-dns-notifications).
+[https://github.com/peterthomassen/draft-thomassen-dnsop-generalized-dns-notify](https://github.com/peterthomassen/draft-thomassen-dnsop-generalized-dns-notify).
 The most recent working version of the document, open issues, etc. should all be
 available there.  The authors (gratefully) accept pull requests.
 
@@ -445,6 +445,6 @@ Christian Elmerot
 
 # Change History (to be removed before publication)
 
-* draft-thomassen-dnsop-generalized-dns-notifications-00
+* draft-thomassen-dnsop-generalized-dns-notify-00
 
 > Initial public draft.
