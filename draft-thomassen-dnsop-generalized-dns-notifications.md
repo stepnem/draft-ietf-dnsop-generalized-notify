@@ -423,6 +423,20 @@ found to be useful for amplification attacks.
 In any case, NOTIFY consumers MAY configure rate limits to address
 concerns about the impact of unsolicited NOTIFY messages.
 
+# IANA Considerations
+
+Per {{!RFC8552}}, IANA is requested to create the "Generalized DNS
+Notifications" registry with the following columns and initial
+entries:
+
+| NOTIFY type | Location             | relative to | Reference       |
+| ----------- | -------------------- | ----------- | --------------- |
+| CDS         | _cds-notifications   | parent      | [this document] |
+| CSYNC       | _csync-notifications | parent      | [this document] |
+| DNSKEY      | TODO                 | TODO        | [this document] |
+
+[TODO: (1) Detail out use cases? (2) Add entries via RFC or web form?]
+
 --- back
 
 # Change History (to be removed before publication)
