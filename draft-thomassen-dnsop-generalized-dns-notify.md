@@ -204,6 +204,16 @@ and Multi-Signer scanning for zone updates.
 
 The CDS/CDNSKEY inefficiency may be addressed by the child sending a
 NOTIFY(CDS) to an address where the parent listens for such notifications.
+
+While the receiving side will often be a scanning service provided by
+the registry itself, it is expected that in the ICANN RRR model, some
+registries will prefer registrars to conduct CDS/CDNSKEY scans.
+For such parents, the receiving service should notify the appropriate
+registrar, over any communication channel deemed suitable between
+registry and registry (such as EPP).
+Such internal processing is inconsequential from the perspective of
+the child: the NOTIFY packet is simply sent to the listener address.
+
 To address the CDS/CDNSKEY dichotomy, NOTIFY(CDS) is defined to indicate
 any child-side changes pertaining to a upcoming update of DS records.
 Upon receipt of NOTIFY(CDS), the parent SHOULD initiate the same scan
@@ -388,6 +398,12 @@ for updates to the DNSKEY RRset.
 
 # Out of Scope
 
+To accommodate ICANN's RRR model, the parent's listener may forward
+CDS/CDNSKEY and CSYNC notifications to the registrar, e.g. via EPP.
+From the perspective of this protocol, the NOTIFY packet is simply
+sent to the parent's listener address; additional aspects of internal
+processing are out of scope.
+
 In the multi-signer case, where the same zone is signed by multiple
 semi-independent “signers” it is obviously necessary to devise means
 of keeping the non-DNSSEC contents of the zone in sync. That is out of
@@ -447,6 +463,8 @@ Christian Elmerot, Ólafur Guðmundsson
 # Change History (to be removed before publication)
 
 * draft-thomassen-dnsop-generalized-dns-notify-01
+
+> Mention Ry-to-Rr forwarding to accommodate RRR model
 
 > Add port number flexiblity
 
