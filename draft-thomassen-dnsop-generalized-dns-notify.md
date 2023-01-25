@@ -231,12 +231,12 @@ is known, and because the parent obviously controls the contents of
 its own zone the simplest solution is for the parent to publish the
 address where it prefers to have notifications sent. To be slightly
 more general than just using an address record we propose to use SRV
-records, as they are well suited to this.
+records, which also allows specifying a port number of the listener.
 
 In the zone `parent.`:
 
-    _cds-notifications.parent.   IN SRV n m  53 scanner.parent.
-    _csync-notifications.parent. IN SRV n m  53 scanner.parent.
+    _cds-notifications.parent.   IN SRV n m  59 scanner.parent.
+    _csync-notifications.parent. IN SRV n m  59 scanner.parent.
 
 ## How to Interpret CDS and CSYNC Notifications
 
@@ -299,8 +299,8 @@ record that documents the wanted address for DNSKEY notifications.
 
 In analogy with the other cases, but here in the zone `child.parent.`:
 
-    _dnskey-notification.child.parent. IN SRV n m 53 scanner.signerA.
-    _dnskey-notification.child.parent. IN SRV n m 53 scanner.signerB.
+    _dnskey-notification.child.parent. IN SRV n m 59 scanner.signerA.
+    _dnskey-notification.child.parent. IN SRV n m 59 scanner.signerB.
 
 should act as a trigger for the signer that whenever there are changes
 to the DNSKEY RRset it should send a corresponding NOTIFY(DNSKEY) to
@@ -373,9 +373,9 @@ completely other scenarios than are described here. If that is the
 case it could be that a new record type would provide a cleaner
 solution to all the new types of notification signaling. Eg.:
 
-    parent.         IN NOTIFY  CDS     53   scanner.parent.
-    parent.         IN NOTIFY  CSYNC   53   scanner.parent.
-    child.parent.   IN NOTIFY  DNSKEY  5300 music.service.provider.
+    parent.         IN NOTIFY  CDS     59   scanner.parent.
+    parent.         IN NOTIFY  CSYNC   59   scanner.parent.
+    child.parent.   IN NOTIFY  DNSKEY  5900 music.service.provider.
 
 ## Open Question For DNSKEY Notifications
 
@@ -440,13 +440,15 @@ entries:
 
 # Acknowledgements
 
-Christian Elmerot
+Christian Elmerot, Ólafur Guðmundsson
 
 --- back
 
 # Change History (to be removed before publication)
 
 * draft-thomassen-dnsop-generalized-dns-notify-01
+
+> Add port number flexiblity
 
 > Editorial improvements
 
