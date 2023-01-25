@@ -456,7 +456,7 @@ entries:
 
 # Acknowledgements
 
-Christian Elmerot, Ólafur Guðmundsson
+Joe Abley, Mark Andrews, Christian Elmerot, Ólafur Guðmundsson, Paul Wouters
 
 --- back
 
