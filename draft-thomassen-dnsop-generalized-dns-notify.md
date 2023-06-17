@@ -434,7 +434,7 @@ Class
         Class.
 
 RRtype
-        The type of generalised NOTIFY that this NOTIFY RR defines
+        The type of generalized NOTIFY that this NOTIFY RR defines
         the desired target address for. Currently only the types CDS,
         CSYNC and DNSKEY are suggested to be supported, but there is
         no protocol issue should a use case for additional types of
@@ -454,7 +454,7 @@ Port
 
 Target
         The domain name of the target host providing the service of
-        listening for generalised notifications of the specified type.
+        listening for generalized notifications of the specified type.
         This name MUST resolve to one or more address records.
 
 # Open Questions
@@ -468,7 +468,7 @@ name) and also changing the semantics of one of the integer fields of
 the SRV record.
 
 Overloading semantics on a single record type has not been a good idea
-in the past. Furthermore, as the generalised notifications are a new
+in the past. Furthermore, as the generalized notifications are a new
 proposal with no prior deployment on the public Internet there is an
 opportunity to avoid repeating previous mistakes.
 
@@ -478,8 +478,11 @@ upon insertion of the record indicating the notification target.
 The nameserver can be "unaware"; a conventional SRV record would
 therefore suffice from a processing point of view.
 In the case of the more "horizontal" NOTIFY(DNSKEY), however, the
-nameserver will have to act on the insertion of a `zone. NOTIFY
-DNSKEY ...` record.
+nameserver will have to act on the insertion of a
+
+	zone.example.   IN NOTIFY DNSKEY ...
+
+record.
 
 A new record type would therefore make it possible to more easily
 associate the special processing with the record's insertion. The
@@ -489,6 +492,30 @@ types of notification signaling. Eg.:
     parent.         IN NOTIFY  CDS     1  59   scanner.parent.
     parent.         IN NOTIFY  CSYNC   1  59   scanner.parent.
     child.parent.   IN NOTIFY  DNSKEY  1  5900 ctrl.multi-signer.example.
+
+## Rationale for Keeping DNS Message Format and Transport
+
+In the most common cases of using generalized notifications the
+recipient is expected to not be a nameserver, but rather some other
+type of service, like a CDS/CSYNC scanner.
+
+However, this will likely not always be true. In particular it seems
+likely that in cases where the parent is not a large
+delegation-centric zone like a TLD, but rather a smaller zone with a
+small number of delegations there will not be separate services for
+everything and the recipient of the NOTIFY(CDS) or NOTIFY(CSYNC) will
+be an authoritative nameserver for the parent zone.
+
+Another case where this seems likely is in controller-less
+multi-signer setups where there is no central controller. Instead the
+multi-signer algorithms will be implemented inside or near each
+participating signer. Also in these cases it seems likely that the
+recipient in some cases will be an authoritative nameserver.
+
+For this reason it seems most reasonable to stay within the the well
+documented and already supported message format specified in RFC 1996
+and delivered over normal DNS transport, although not necessarily to
+port 53.
 
 ## Open Question For DNSKEY Notifications
 
