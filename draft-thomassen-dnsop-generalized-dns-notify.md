@@ -280,7 +280,7 @@ Example:
 
 Other schemes are possible, but are out of scope for this document.
 
-The suggested mnemonic for the new record type is "NOTIIFY" and it is
+The suggested mnemonic for the new record type is "NOTIFY" and it is
 further described below.
 
 ## How to Interpret CDS and CSYNC Notifications
