@@ -24,6 +24,11 @@ author:
     name: Peter Thomassen
     org: deSEC, Secure Systems Engineering
     email: peter@desec.io
+ -
+    ins: J. Levine
+    name: John Levine
+    org: Standcore LLC
+    email: standards@standcore.com
 
 normative:
 
@@ -605,6 +610,8 @@ Wouters, Brian Dickson
 * draft-thomassen-dnsop-generalized-dns-notify-02
 
 > Add rationale for staying in band
+
+> Add John as an author
 
 * draft-thomassen-dnsop-generalized-dns-notify-01
 
