@@ -602,6 +602,10 @@ Wouters, Brian Dickson
 
 # Change History (to be removed before publication)
 
+* draft-thomassen-dnsop-generalized-dns-notify-02
+
+> Add rationale for staying in band
+
 * draft-thomassen-dnsop-generalized-dns-notify-01
 
 > Mention Ry-to-Rr forwarding to accommodate RRR model
