@@ -4,7 +4,7 @@
 
 * [Editor's Copy](https://peterthomassen.github.io/draft-thomassen-dnsop-generalized-dns-notify/#go.draft-thomassen-dnsop-generalized-dns-notify-latest.html)
 * [Individual Draft](https://datatracker.ietf.org/doc/draft-thomassen-dnsop-generalized-dns-notify/)
-* [Compare Editor's Copy to Individual Draft](https://peterthomassen.github.io/dns-alt-svc/#go.draft-thomassen-dnsop-generalized-dns-notify-latest.diff)
+* [Compare Editor's Copy to Individual Draft](https://peterthomassen.github.io/draft-thomassen-dnsop-generalized-dns-notify/#go.draft-thomassen-dnsop-generalized-dns-notify-latest.diff)
 
 ## Building the Draft
 
