@@ -1,7 +1,7 @@
 ---
 title: Generalized DNS Notifications
 abbrev: Generalized Notifications
-docname: draft-thomassen-dnsop-generalized-dns-notify-latest
+docname: draft-ietf-dnsop-generalized-notify-latest
 date: {DATE}
 category: std
 
@@ -59,7 +59,7 @@ referred to as "NOTIFY record", which is used to publish details about
 where generalized notifications should be sent.
 
 TO BE REMOVED: This document is being collaborated on in Github at:
-[https://github.com/peterthomassen/draft-thomassen-dnsop-generalized-dns-notify](https://github.com/peterthomassen/draft-thomassen-dnsop-generalized-dns-notify).
+[https://github.com/peterthomassen/draft-ietf-dnsop-generalized-notify](https://github.com/peterthomassen/draft-ietf-dnsop-generalized-notify).
 The most recent working version of the document, open issues, etc. should all be
 available there.  The authors (gratefully) accept pull requests.
 
@@ -606,6 +606,10 @@ Wouters, Brian Dickson
 --- back
 
 # Change History (to be removed before publication)
+
+* draft-thomassen-dnsop-generalized-dns-notify-00
+
+> Revision after adoption.
 
 * draft-thomassen-dnsop-generalized-dns-notify-02
 

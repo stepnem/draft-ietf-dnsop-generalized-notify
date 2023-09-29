@@ -1,10 +1,10 @@
 #  Generalized DNS Notifications
 
-## draft-thomassen-dnsop-generalized-dns-notify
+## draft-ietf-dnsop-generalized-notify
 
-* [Editor's Copy](https://peterthomassen.github.io/draft-thomassen-dnsop-generalized-dns-notify/#go.draft-thomassen-dnsop-generalized-dns-notify-latest.html)
-* [Individual Draft](https://datatracker.ietf.org/doc/draft-thomassen-dnsop-generalized-dns-notify/)
-* [Compare Editor's Copy to Individual Draft](https://peterthomassen.github.io/draft-thomassen-dnsop-generalized-dns-notify/#go.draft-thomassen-dnsop-generalized-dns-notify-latest.diff)
+* [Editor's Copy](https://peterthomassen.github.io/draft-ietf-dnsop-generalized-notify/#go.draft-ietf-dnsop-generalized-notify-latest.html)
+* [Individual Draft](https://datatracker.ietf.org/doc/draft-ietf-dnsop-generalized-notify/)
+* [Compare Editor's Copy to Individual Draft](https://peterthomassen.github.io/draft-ietf-dnsop-generalized-notify/#go.draft-ietf-dnsop-generalized-notify-latest.diff)
 
 ## Building the Draft
 
