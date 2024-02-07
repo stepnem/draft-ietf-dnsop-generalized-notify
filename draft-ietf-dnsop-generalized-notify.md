@@ -36,27 +36,13 @@ informative:
 
 --- abstract
 
-Changes in CDS/CDNSKEY, CSYNC, and other records related to delegation
-maintenance are usually detected through scheduled scans run by the
-consuming party (e.g. top-level domain registry), incurring an
-uncomfortable trade-off between scanning cost and update latency.
+This document extends the use of DNS NOTIFY ({{!RFC1996}} beyond conventional
+zone transfer hints, bringing the benefits of ad-hoc notifications to DNS
+delegation maintenance in general.  Use cases include DNSSEC key rollovers
+hints, and quicker changes to a delegation's NS record set.
 
-A similar problem exists when scheduling zone transfers, and has been
-solved using the well-known DNS NOTIFY mechanism ({{!RFC1996}}).
-This mechanism enables a primary nameserver to proactively inform
-secondaries about zone changes, allowing the secondary to initiate an
-ad-hoc transfer independently of when the next SOA check would be due.
-
-This document extends the use of DNS NOTIFY beyond conventional zone
-transfer hints, bringing the benefits of ad-hoc notifications to DNS
-delegation maintenance in general.  Use cases include DNSSEC key
-rollovers hints via NOTIFY(CDS) and NOTIFY(DNSKEY) messages, and
-quicker changes to a delegation's NS record set via NOTIFY(CSYNC)
-messages.
-
-Furthermore, this document proposes a new DNS record type, tentatively
-referred to as "NOTIFY record", which is used to publish details about
-where generalized notifications should be sent.
+To enable this functionality, a method for discovering the receiver endpoint
+for such notification message is introduced, via the new NOTIFY record type.
 
 TO BE REMOVED: This document is being collaborated on in Github at:
 [https://github.com/peterthomassen/draft-ietf-dnsop-generalized-notify](https://github.com/peterthomassen/draft-ietf-dnsop-generalized-notify).
@@ -67,25 +53,22 @@ available there.  The authors (gratefully) accept pull requests.
 
 # Introduction
 
-This document introduces a generalization of the DNS NOTIFY mechanism
-described in {{!RFC1996}}.
-
-Traditional DNS notifications, which are here referred to as
+Traditional DNS notifications {{!RFC1996}}, which are here referred to as
 "NOTIFY(SOA)", are sent from a primary server to a secondary server to
 minimize the latter's convergence time to a new version of the
 zone. This mechanism successfully addresses a significant inefficiency
 in the original protocol.
 
-Today there are several new cases where similar inefficiencies cause
-significant problems. However, just as in the NOTIFY(SOA) case, a new
+Today similar inefficiencies occur in new use cases, in particular delegation
+maintenance (DS and NS record updates). Just as in the NOTIFY(SOA) case, a new
 set of notification types will have a major positive benefit by
 allowing the DNS infrastructure to completely sidestep these
-inefficiencies.
+inefficiencies. For additional context, see {{context}}.
 
-There are no DNS protocol changes introduced by this document.
-
-There are, however, proposals for how to interpret a wider range of
-DNS messages that are already allowed (but not used) by the protocol.
+No DNS protocol changes are introduced by this document. The mechanism
+instead makes use of a wider range of DNS messages allowed by the protocol.
+Future extension for further use cases (such as multi-signer key exchange)
+is possible.
 
 Readers are expected to be familiar with DNSSEC, including {{!RFC4033}},
 {{!RFC4034}}, {{!RFC4035}}, {{!RFC6781}}, {{!RFC7344}}, {{!RFC7477}},
@@ -105,113 +88,11 @@ In the text below there are two different uses of the term
 "NOTIFY". One refers to the NOTIFY message, sent from a DNSSEC signer
 or name server to a notification target (for subsequent
 processing). We refer to this message as NOTIFY(RRtype) where the
-RRtype indicates the type of NOTIFY message (CDS, CSYNC or DNSKEY
-respectively).
+RRtype indicates the type of NOTIFY message (CDS or CSYNC).
 
 The second is a proposed new DNS record type, with the suggested
 mnemonic "NOTIFY". This record is used to publish the location of the
 notification target. We refer to this as the "NOTIFY record".
-
-# Costs and Dangers of Slow Convergence
-
-{{!RFC1996}} introduced the concept of a DNS Notify message which was used
-to improve the convergence time for secondary servers when a DNS zone
-had been updated in the primary. The basic idea was to augment the
-traditional "pull" mechanism (a periodic SOA query) with a "push"
-mechanism (a Notify) for a common case that was otherwise very
-inefficient (due to either slow convergence or wasteful overly
-frequent scanning of the primary for changes).
-
-Today we have similar issues with slow updates of DNS data in spite of
-the data having been published. The two most obvious cases are the
-scalability issues of modern CDS and CSYNC scanners that are beginning
-to be deployed in a growing number of TLD registries. Because of the
-large number of child delegations, scanning for CDS and CSYNC records
-is rather slow (as in infrequent).
-
-Another use case is for so-called "multi-signer" setups where there
-are multiple, semi-independent, "signers" that each sign the same
-zone, but with individual sets of keys. One requirement for
-multi-signer setups to work is the ability to insert additional
-DNSKEY records in each signer's version of the zone. (This is not the
-only multi-signer requirement, but it is the one that matters
-here.) The problem here is that modern signers will commonly roll
-DNSSEC Zone Signing Keys automatically and without informing anyone,
-assuming a single-signer setup where ZSK rollovers are a local matter
-(as opposed to KSK rollovers that involve the parent).
-As a result, when the ZSKs of one signer are rolled, the other signers
-will be unaware of this event. However, to enable validation of
-signatures using a new ZSK, it needs to be announced by all
-nameservers that are authoritative for the child. To achieve this, it
-is therefore necessary to bring the signers' DNSKEY RRsets back in
-sync. Such re-synchronization can either happen based on a schedule,
-or on demand, given a suitable trigger.
-
-# Efficiency Issues with DNS Scanning vs. Notification
-
-The original problem that {{!RFC1996}} addressed was the problem of
-optimization between frequent checking for new versions of a zone by a
-secondary and infrequent checking.
-While it is possible to indicate how frequently checks should occur
-(via the SOA Refresh parameter), these checks did not allow catching
-zone changes that fall between checkpoints.
-NOTIFY replaces scheduled scanning with a more efficient mechanism.
-
-In modern DNS infrastructure there are several new scanning-based
-inefficiencies that did not exist at the time of the writing of
-{{!RFC1996}}.
-
-## CDS and CDNSKEY Scanners
-
-An increasing number of TLD registries are implementing periodic
-scanning for CDS and CDNSKEY records in child zones. Because of the
-large number of delegations this is rather costly, especially as it is
-only a very small number of the signed delegations that will have
-updated the CDS or CDNSKEY record between two scanning runs.
-
-Frequent scanning is costly. Infrequent scanning causes slower
-convergence (i.e. delay until the DS in the parent is updated).
-
-Not every zone runs a CDS or CSYNC scanner (today). However, for those
-that do, the problem is actually worse than in the traditional primary
-to secondary case. The reason is that in the original case the primary
-is able to indicate how frequently changes are to be expected (via the
-SOA Refresh parameter). No equivalent mechanism exist for the new
-scanning services.
-
-## CSYNC Scanners
-
-This is basically the same problem as for the CDS / CDNSKEY scanners:
-large number of delegations vs infrequent updates to the CSYNC record
-in the child zones.
-
-Frequent scanning is costly. Infrequent scanning causes slower convergence
-(i.e. delay until the delegation information in the parent is updated).
-
-## Multi-Signer Setups
-
-{{!I-D.wisser-dnssec-automation}} describes processes for managing signed
-zones using multiple semi-independent "signers" (i.e. services that
-take an unsigned zone, sign it using unique DNSKEYs and publish the
-zone on the public Internet). The setup most commonly discussed for
-multi-signer uses a "multi-signer controller" which is a separate
-service responsible for keeping the signing and delegation information
-in sync across multiple signers.
-
-To keep information in sync, the signers need to be scanned for
-current information about the DNSKEY RRset in each signer. The problem
-is that modern "signers" will typically do DNSKEY rollovers
-(especially ZSK rollovers) automatically without informing anyone
-else, because a single-signer setup is often assumed (in which case the
-ZSK rollover is a matter completely internal to the signer).
-
-In the multi-signer case, this is not a correct assumption. It is
-therefore necessary to run polls frequently to minimize
-the time window between one signer changing its version of the DNSKEY
-RRset and the controller noticing and re-synchronizing all signers.
-
-Frequent scanning: costly. Infrequent scanning: slower convergence
-(i.e. longer potential inconsistency across signers).
 
 # CDS/CDNSKEY and CSYNC Notifications
 
@@ -219,8 +100,8 @@ The {{!RFC1996}} NOTIFY message sends a SOA record in the Query
 Section. We refer to this as a NOTIFY(SOA).
 By generalizing the concept of DNS NOTIFY it is possible to address
 not only the original inefficiency (primary name server to secondary
-nameserver convergence) but also the problems with CDS/CDNSKEY, CSYNC
-and Multi-Signer scanning for zone updates.
+nameserver convergence) but also the problems with CDS/CDNSKEY and CSYNC
+scanning for zone updates {{!RFC7344}} {{!RFC7477}}.
 
 The CDS/CDNSKEY inefficiency may be addressed by the child sending a
 NOTIFY(CDS) to an address where the parent listens for such notifications.
@@ -327,74 +208,17 @@ Upon receipt of a NOTIFY(CSYNC) to the published address for CSYNC
 notifications, the parent has exactly the same options to choose among
 as for the NOTIFY(CDS).
 
-# DNSKEY Notifications
-
-In the multi-signer case the problem is slightly different, because it
-is not the parent that should be notified, but rather a third party.
-
-## Where to send DNSKEY Notifications
-
-The question is how the multi-signer controller should inform the
-signer about where to send the notification. In the NOTIFY(CDS) and
-NOTIFY(CSYNC) cases the child (the service that signs the child zone)
-knows the name of the parent zone and can look up the notification
-address there. In the NOTIFY(DNSKEY) case, there is no trivial target.
-
-However, it is possible to look up the notification address in the
-child zone itself. This translates into a requirement for multi-signer
-setups, namely that at least one external party (typically a
-multi-signer controller) has the ability to insert or modify RRsets in
-the child zone. Therefore the controller should be able to insert a
-record that documents the wanted notification address for
-NOTIFY(DNSKEY) messages.
-
-Also in the NOTIFY(DNSKEY) case there is the possibility that this
-scheme will not be sufficient for all cases. And therefore the
-proposed design (in analogy with the NOTIFY(CDS) and NOTIFY(CSYNC)
-cases) is:
-
-    child.parent. IN NOTIFY DNSKEY scheme port scanner.signerA.
-    child.parent. IN NOTIFY DNSKEY scheme port scanner.signerB.
-
-with the only defined scheme at this time being scheme=1 with the
-interpretation that whenever there are changes to the DNSKEY RRset in
-a signer it should send a corresponding NOTIFY(DNSKEY) to all
-notification addresses listed in the "child.parent. NOTIFY" RRset.
-
-Example:
-
-    child.parent. IN NOTIFY DNSKEY 1 5361 scanner.signerA.
-    child.parent. IN NOTIFY DNSKEY 1 5361 scanner.signerB.
-    child.parent. IN NOTIFY DNSKEY 1 5361 ctrl.multi-signer.example.
-
-Other schemes are possible, but are out of scope for this document.
-
-## How to Interpret DNSKEY Notifications
-
-The receipt of a NOTIFY(DNSKEY) is a hint that the DNSKEY RRset at the
-sending signer has been updated. If the child zone is not part of a
-multi-signer setup this should be a no-op that does not cause any
-action. In a multi-signer setup, though, this hint provides the
-recipient of the notification with the same options as in the
-NOTIFY(CDS) and NOTIFY(CSYNC) cases: schedule an immediate check,
-or ignore.
-
 # Who Should Send the Notifications?
 
 Because of the security model where a notification by itself never
 causes a change (it can only speed up the time until the next
 check for the same thing), the sender's identity is not crucial.
 
-This opens up the possibility of having the controller in a
-multi-signer setup send the CDS and CSYNC notifications to the parent,
+This opens up the possibility of having an arbitrary party (e.g., a
+side-car service) send the notifications to the parent,
 thereby enabling this new functionality even before the emergence of
 support for generalized DNS notifications in the name servers used for
 signing.
-
-However, as multi-signer is strongly dependent on DNSKEY notifications
-(which, in case of an automatic ZSK rollover, can only be generated by
-the signing software), this does not alleviate the need for
-modifications also to signing software to support NOTIFY(DNSKEY).
 
 # Timing Considerations
 
@@ -415,8 +239,7 @@ It is therefore RECOMMENDED that the child delays sending NOTIFY
 packets to the parent until a consistent public view of the pertinent
 records is ensured.
 
-NOTIFY(CSYNC) has the same timing consideration as NOTIFY(CDS) while
-NOTIFY(DNSKEY) does not.
+NOTIFY(CSYNC) has the same timing consideration as NOTIFY(CDS).
 
 # The Format of the NOTIFY Record
 
@@ -426,22 +249,21 @@ defined.
         Name TTL Class NOTIFY RRtype Scheme Port Target
 
 Name
-        The zone this RR refers to. In the case of NOTIFY(CDS) and
-        NOTIFY(CSYNC) this is the name of the parent zone. In the case
-        of NOTIFY(DNSKEY) this is the name of the zone in which a
-        change in the DNSKEY RRset is taking place.
+        Name of the zone to which the notification's hint pertains (i.e.,
+        the zone in which the change will be made, if accepted).
+        For NOTIFY(CDS) and NOTIFY(CSYNC), this is the name of the parent zone.
 
 TTL
-        Standard DNS meaning [RFC 1035].
+        Standard DNS meaning {{!RFC1035}}.
 
 Class
-        Standard DNS meaning [RFC 1035]. NOTIFY records occur in the IN
+        Standard DNS meaning {{!RFC1035}}. NOTIFY records occur in the IN
         Class.
 
 RRtype
         The type of generalized NOTIFY that this NOTIFY RR defines
-        the desired target address for. Currently only the types CDS,
-        CSYNC and DNSKEY are suggested to be supported, but there is
+        the desired target address for. Currently only the types CDS and
+        CSYNC are suggested to be supported, but there is
         no protocol issue should a use case for additional types of
         notifications arise in the future.
 
@@ -482,21 +304,18 @@ special processing needs to be applied by the authoritative nameserver
 upon insertion of the record indicating the notification target.
 The nameserver can be "unaware"; a conventional SRV record would
 therefore suffice from a processing point of view.
-In the case of the more "horizontal" NOTIFY(DNSKEY), however, the
-nameserver will have to act on the insertion of a
 
-	zone.example.   IN NOTIFY DNSKEY ...
-
-record.
+However, future use cases (such as for multi-signer key exchange) may
+require the nameserver to trigger special operations, for example when
+a NOTIFY record is inserted during onboarding of a new signer.
 
 A new record type would therefore make it possible to more easily
 associate the special processing with the record's insertion. The
-NOTIFY record type would provide a cleaner solution to all the new
-types of notification signaling. Eg.:
+NOTIFY record type also provides a cleaner solution for bundling all
+the new types of notification signaling in an RRset, like:
 
     parent.         IN NOTIFY  CDS     1  59   scanner.parent.
     parent.         IN NOTIFY  CSYNC   1  59   scanner.parent.
-    child.parent.   IN NOTIFY  DNSKEY  1  5900 ctrl.multi-signer.example.
 
 ## Rationale for Keeping DNS Message Format and Transport
 
@@ -511,25 +330,10 @@ small number of delegations there will not be separate services for
 everything and the recipient of the NOTIFY(CDS) or NOTIFY(CSYNC) will
 be an authoritative nameserver for the parent zone.
 
-Another case where this seems likely is in controller-less
-multi-signer setups where there is no central controller. Instead the
-multi-signer algorithms will be implemented inside or near each
-participating signer. Also in these cases it seems likely that the
-recipient in some cases will be an authoritative nameserver.
-
 For this reason it seems most reasonable to stay within the the well
 documented and already supported message format specified in RFC 1996
 and delivered over normal DNS transport, although not necessarily to
 port 53.
-
-## Open Question For DNSKEY Notifications
-
-In a multi-signer setup there are multiple signers. How will the
-multi-signer controller know which signer sent the notification? As
-the number of signers for a particular zone is low (typically 2 or
-possibly 3), there is no major problem caused by not knowing which
-signer sent the notification and instead always check all the signers
-for updates to the DNSKEY RRset.
 
 # Out of Scope
 
@@ -545,15 +349,9 @@ specifies alternative logic for dealing with such requirements.
 Description of internal processing in the recipient end or for
 locating the recipient are out of scope of this document.
 
-In the multi-signer case, where the same zone is signed by multiple
-semi-independent “signers” it is obviously necessary to devise means
-of keeping the non-DNSSEC contents of the zone in sync. That is out of
-scope of the multi-signer work and also out of scope of this document.
-
-A corner case of this scoping regards making changes to the NS
-RRset. Individual signers (as in DNS service providers) may want to be
-able to make such changes independently of the other contents of the
-zone.
+While use of the NOTIFY mechanism for coordinating the key exchange in
+multi-signer setups {{!I-D.wisser-dnssec-automation}} is conceivable,
+the detailed specification is left for future work.
 
 # Security Considerations
 
@@ -569,10 +367,10 @@ NOTIFY messages.
 
 Another consideration is whether generalized DNS
 Notifications can be used as an amplification attack. The answer seems
-to be “NO”, because the size of the generalized NOTIFY messages is
+to be "no", because the size of the generalized NOTIFY messages is
 mostly equal to the size of the response and it is also mostly equal
-to the size of the resulting outbound query (for the child zone’s CDS,
-CSYNC or DNSKEY RRset).
+to the size of the resulting outbound query (for the child zone's CDS or
+CSYNC RRset).
 
 Hence the amplification attack potential of generalized Notifications
 is the same as for the original NOTIFY(SOA), which has never been
@@ -590,13 +388,12 @@ Name: Generalized DNS Notifications
 
 Assignment Policy: Expert Review
 
-Reference: [this document]
+Reference: (this document)
 
 | NOTIFY type | Scheme | Location | Reference       |
 | ----------- | ------ | -------- | --------------- |
-| CDS         |      1 | parent.  | [this document] |
-| CSYNC       |      1 | parent.  | [this document] |
-| DNSKEY      |      1 | zone.    | [this document] |
+| CDS         |      1 | parent.  | (this document) |
+| CSYNC       |      1 | parent.  | (this document) |
 
 # Acknowledgements
 
@@ -605,9 +402,53 @@ Wouters, Brian Dickson
 
 --- back
 
+
+# Efficiency and Convergence Issues in DNS Scanning {#context}
+
+{{!RFC1996}} introduced the concept of a DNS Notify message which was used
+to improve the convergence time for secondary servers when a DNS zone
+had been updated in the primary. The basic idea was to augment the
+traditional "pull" mechanism (a periodic SOA query) with a "push"
+mechanism (a Notify) for a common case that was otherwise very
+inefficient (due to either slow convergence or wasteful overly
+frequent scanning of the primary for changes).
+
+While it is possible to indicate how frequently checks should occur
+(via the SOA Refresh parameter), these checks did not allow catching
+zone changes that fall between checkpoints. {{!RFC1996}} addressed the
+optimization of the time-and-cost trade-off between a seceondary checking
+frequently for new versions of a zone, and infrequent checking, by
+replacing scheduled scanning with the more efficient NOTIFY mechanism.
+
+Today, we have similar issues with slow updates of DNS data in spite of
+the data having been published. The two most obvious cases are CDS and
+CSYNC scanners deployed in a growing number of TLD registries. Because of
+the large number of child delegations, scanning for CDS and CSYNC records
+is rather slow (as in infrequent).
+
+It is only a very small number of the delegations that will have updated
+CDS or CDNSKEY record in between two scanning runs. However, frequent
+scanning for CDS and CDNSKEY records is costly, and infrequent scanning
+causes slower convergence (i.e., delay until the DS RRset is updated).
+
+Unlike in the original case, where the primary is able to suggest the
+scanning interval via the SOA Refresh parameter, an equivalent mechanism
+does not exist for DS-related scanning.
+
+All of this above also applies to parents that offer automated NS and glue
+record maintenance via CSYNC scanning {{!RFC7477}}. Again, given that CSYNC
+records change only rarely, frequent scanning of a large number of
+delegations seems disproportionately costly, while infrequent scanning
+causes slower convergence (delay until the delegation is updated).
+
+
 # Change History (to be removed before publication)
 
-* draft-thomassen-dnsop-generalized-dns-notify-00
+* draft-ietf-dnsop-generalized-notify-01
+
+> Clean-up, remove multi-signer use-case
+
+* draft-ietf-dnsop-generalized-notify-00
 
 > Revision after adoption.
 
