@@ -378,6 +378,11 @@ processing. It is RECOMMENDED to configure rate limiting independently for
 both the notification's source IP address and the name of the zone that is
 conveyed in the notification message (e.g., the child zone).
 
+Rate limiting will also mitigate processing load of garbage notifications.
+Alternative solutions appear significantly more expensive. (For example,
+validating the signature of a signed notification is much more expensive
+than checking the rate limit.)
+
 
 # IANA Considerations
 
@@ -445,6 +450,8 @@ causes slower convergence (delay until the delegation is updated).
 # Change History (to be removed before publication)
 
 * draft-ietf-dnsop-generalized-notify-01
+
+> Discussion on garbage notifications
 
 > More discussion on amplification risks
 
