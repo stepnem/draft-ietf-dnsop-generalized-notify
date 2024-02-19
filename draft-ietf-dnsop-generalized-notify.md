@@ -112,7 +112,7 @@ where it prefers to have notifications sent.
 It is strongly desirable that the notification sender is able to figure
 out where to send the NOTIFY via a single lookup, even when ignorant of
 the details of the parent-side business relationships (e.g., whether
-there is a registrar). The mechanism should thus enable the parent to
+there is a registrar or not). The mechanism should thus enable the parent to
 (optionally) announce the notification endpoint in a delegation-specific
 way. (If the delegation is several labels deep, an extra query may be
 needed for identifying the parent.)
@@ -121,33 +121,56 @@ These requirements suggest making the endpoint discoverable at a
 child-specific name. The record there is expected to be a wildcard
 name, unless the parent intends to publish a child-specific endpoint.
 
+## Multiple Synchronization Mechanisms
+
+Generalized notifications constitute one mechanism to improve the
+efficiency of automated updates to child zone delegation
+information. However, it hase become clear that there are other
+alternatives that may or may not be more suitable in individual cases.
+
+One such alternative mechanism is when updates to the parent zone are
+managed via an API. Another mechanism is when updates are performed
+via DNS Update. 
+
+Both these mechanisms already exist today, although they suffer from
+the lack of a general mechanism for how to locate both the target and
+the mechanism to use for synchronization of delegation information.
+
+This is exactly the same situation as for generalized notifications.
+Hence a unified publication mechanism that supports all three known
+mechanisms, as well as potential future mechanisms, is desired.
+
+The scope for the publication mechanism is therefore wider than only
+support for generalized notifications.
+
 ## Signaling Method
 
 Parents participating in the discovery scheme for the purpose of
 delegation maintenance notifications MUST publish endpoint information
-using the record type defined in {{notifyrdtype}}, as described in this
+using the record type defined in {{dsyncrdtype}}, as described in this
 section.
 
-The suggested mnemonic for the new record type is "NOTIFY" and it is
-further described below. NOTIFY records MUST be signed with DNSSEC.
+The suggested mnemonic for the new record type is "DSYNC" and it is
+further described below. DSYNC records MUST be signed with DNSSEC.
+JOHANI: why is that?
 
 If the parent itself performs CDS/CDNSKEY and CSYNC processing, or if
 the parent forwards the notifications internally to the designated party
 (such as as registrar), the following scheme is used:
 
-    *._signal.se.   IN NOTIFY  CDS   scheme port endpoint.ns.se.
-    *._signal.se.   IN NOTIFY  CSYNC scheme port endpoint.ns.se.
+    *._signal.se.   IN DSYNC  CDS   scheme port endpoint.registry.se.
+    *._signal.se.   IN DSYNC  CSYNC scheme port endpoint.registry.se.
 
 It is also possible to publish child-specific records, where the
 wildcard label is replaced by the child's FQDN with the parent zone's
 labels stripped.
 
-As an example, consider a registrar offering 3rd level domains like
-`example.net.se`, delegated directly from `se` zone. If the registrar
-provides the notification endpoint, the parent may publish this
-information using the following scheme:
+As an example, consider a registrar offering 2rd level domains like
+`example.se`, delegated from `se` zone. If the registrar provides the
+notification endpoint, the parent may publish this information using
+the following scheme:
 
-    example.net._signal.se.   IN NOTIFY  CDS   scheme port ...
+    example._signal.se.   IN DSYNC  CDS   scheme port endpoint.registrar.com.
 
 (Note that this is a generic method, allowing the parent to securely
 publish other sorts of information about a child that currently is not
@@ -160,13 +183,19 @@ this purpose.
 To accommodate indirect delegation management models (such as ICANN's
 RRR model), the parent's designated notification target may forward
 NOTIFY(CDS) messages to the registrar, e.g. via EPP or by forwarding the
-NOTIFY(CDS) message directly. The same is true also for NOTIFY(CSYNC).
+NOTIFY(CDS) message directly. The same is true also for
+NOTIFY(CSYNC).
 
-# The NOTIFY Record {#notifyrdtype}
+JOHANI: Why do we need this? If the registrar supports receiving
+JOHANI: generalized notifications it should be announced via publication of
+JOHANI: a suitable endpoint. Why introduced NOTIFY-forwarding?
+
+
+# The DSYNC Record {#dsyncrdtype}
 
 ## Wire Format
 
-The NOTIFY RDATA wire format is encoded as follows:
+The DSYNC RDATA wire format is encoded as follows:
 
                          1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3
      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -177,16 +206,15 @@ The NOTIFY RDATA wire format is encoded as follows:
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-/
 
 RRtype
-: The type of generalized NOTIFY that this NOTIFY RR defines the
+: The type of generalized NOTIFY that this DSYNC RR defines the
 desired target address for. For now, only CDS and CSYNC are
 supported values.
 
 Scheme
-: The scheme for locating the desired notification address.
-The range is 0-255. This is a 16 bit unsigned integer in
-network byte order. The value 0 is an error. The value 1 is
-described in this document and all other values are currently
-unspecified.
+: The scheme for locating the desired notification address.  The range
+is 0-255. This is an 8 bit unsigned integer. The value 0 is an
+error. The value 1 is described in this document and all other values
+are currently unspecified.
 
 Port
 : The port on the target host of the notification service. The
@@ -209,15 +237,15 @@ Other schemes are possible, but are out of scope for this document.
 
 Example:
 
-    parent.   IN NOTIFY CDS   1 5359 cds-scanner.parent.
-    parent.   IN NOTIFY CSYNC 1 5360 csync-scanner.parent.
+    parent.   IN DSYNC CDS   1 5359 cds-scanner.parent.
+    parent.   IN DSYNC CSYNC 1 5360 csync-scanner.parent.
 
-From the perspective of this protocol, the NOTIFY(CDS) packet is simply
-sent to the parent's listener address. However, should this turn out
-not to be sufficient, it is possible to define a new "scheme" that
-specifies alternative logic for dealing with such requirements.
-Description of internal processing in the recipient end or for
-locating the recipient are out of scope of this document.
+From the perspective of this protocol, the NOTIFY(CDS) packet is
+simply sent to the parent's published notification address. However,
+should this turn out not to be sufficient, it is possible to define a
+new "scheme" that specifies alternative logic for dealing with such
+requirements.  Description of internal processing in the recipient end
+or for locating the recipient are out of scope of this document.
 
 ## Rationale
 
@@ -232,21 +260,21 @@ Such overloading has not been a good idea in the past. Furthermore, as
 the generalized notifications are a new proposal with no prior
 deployments, there is an opportunity to avoid repeating mistakes.
 
-The NOTIFY record type also provides a cleaner solution for bundling all
+The DSYNC record type also provides a cleaner solution for bundling all
 the new types of notification signaling in an RRset, like:
 
-    parent.         IN NOTIFY  CDS     1  59   scanner.parent.
-    parent.         IN NOTIFY  CSYNC   1  59   scanner.parent.
+    parent.         IN DSYNC  CDS     1  59   scanner.parent.
+    parent.         IN DSYNC  CSYNC   1  59   scanner.parent.
 
-For NOTIFY records indicating CDS/CDNSKEY/CSYNC notification targets, no
+For DSYNC records indicating CDS/CDNSKEY/CSYNC notification targets, no
 special processing needs to be applied by the authoritative nameserver
-upon insertion of a NOTIFY record. The nameserver can thus be "unaware".
+upon insertion of a DSYNC record. The nameserver can thus be "unaware".
 
 Future use cases (such as for multi-signer key exchange) may require the
-nameserver to trigger special operations, for example when a NOTIFY
+nameserver to trigger special operations, for example when a DSYNC
 record is inserted during onboarding of a new signer. It seems cleaner
 and easier that such processing be associated with the insertion of a
-new record, not SRV.
+record of a new type, not an existing type like SRV.
 
 
 # Delegation Maintenance: CDS/CDNSKEY and CSYNC Notifications
@@ -259,17 +287,18 @@ Delegation maintenance NOTIFY messages MUST be formatted as described in
 {{!RFC1996}}, with the `qtype` field replaced as appropriate.
 
 To address the CDS/CDNSKEY dichotomy, the NOTIFY(CDS) message (with
-`qtype=CDS`) is defined to indicate any child-side changes pertaining to
-an upcoming update of DS records.
-Upon receipt of NOTIFY(CDS), the parent SHOULD initiate the same scan
-that would otherwise be triggered based on a timer.
+`qtype=CDS`) is defined to indicate any child-side changes pertaining
+to an upcoming update of DS records. Upon receipt of NOTIFY(CDS), the
+recipient (the parent or a registrar) SHOULD initiate the same DNS
+lookups and verifications that would otherwise be triggered based on a
+timer.
 
 The CSYNC {{!RFC7477}} inefficiency may be similarly treated, with the
 child sending a NOTIFY(CSYNC) message (with `qtype=CSYNC`) to an address
-where the parent is listening to CSYNC notifications.
+where the parent (or a registrar) is listening to CSYNC notifications.
 
 In both cases the notification will speed up processing times by
-providing the parent with a hint that a particular child zone has
+providing the recipient with a hint that a particular child zone has
 published new CDS, CDNSKEY and/or CSYNC records.
 
 ## Endpoint Discovery
@@ -280,10 +309,10 @@ the notification sender MUST perform the following procedure:
 1. Construct the lookup name, by injecting the `_signal` label after the
    first label of the delegation owner name.
 
-2. Perform a DNSSEC-validated lookup of type NOTIFY for the lookup name.
-   If a NOTIFY RRset is retrieved, return it.
+2. Perform a DNSSEC-validated lookup of type DSYNC for the lookup name.
+   If a DSYNC RRset is retrieved, return it.
 
-3. When a denial of existence is returned in response to the NOTIFY
+3. When a denial of existence is returned in response to the DSYNC
    query:
 
    - If the negative response's RRSIG record indicates that the parent
@@ -291,7 +320,7 @@ the notification sender MUST perform the following procedure:
      inserting the `_signal` label into the delegation owner name just
      before the Signer's Name as given by the RRSIG, and go to step 2.
 
-     For example, a NOTIFY query relating to the delegation of
+     For example, a DSYNC query relating to the delegation of
      `example.net.se` might first have been directed at
      `example._signal.net.se`, after which a query for
      `example.net._signal.se` might be required;
@@ -332,11 +361,12 @@ Having a delay between the publication of the new data and the check
 for the new data would alleviate this issue. However, as the parent
 has no way of knowing how quickly the child zone propagates, the
 appropriate amount of delay is uncertain.
+
 It is therefore RECOMMENDED that the child delays sending NOTIFY
-packets to the parent until a consistent public view of the pertinent
+messages to the recipient until a consistent public view of the pertinent
 records is ensured.
 
-### Rationale
+### Rationale For Staying With the DNS Message Format
 
 (RFC Editor: This subsection is to be removed before publication)
 
@@ -358,17 +388,19 @@ port 53.
 
 ## Processing of NOTIFY Messages
 
-TODO: how to interpret multiple NOTIFY records?
+TODO: how to interpret multiple DSYNC records?
+JOHANI: what is the question?
 
 While the receiving side will often be a scanning service provided by
 the registry itself, it is expected that in the ICANN RRR model, some
 registries will prefer registrars to conduct CDS/CDNSKEY scans.
-For such parents, the receiving service should notify the appropriate
-registrar, over any communication channel deemed suitable between
-registry and registrar (such as EPP, or possibly by forwarding the
-actual NOTIFY(CDS) or NOTIFY(CSYNC) directly).
+
+For such parents, the suitable registrar notification endpoint should
+be published in the parent zone, thereby enabling child zones to
+direct their generalized notifications to the appropriate target.
+
 Such internal processing is inconsequential from the perspective of
-the child: the NOTIFY packet is simply sent to the notification address.
+the child: the NOTIFY message is simply sent to the notification address.
 
 Upon receipt of a (potentially forwarded) NOTIFY(CDS) for a particular
 child zone at the published address for CDS notifications, the parent
@@ -422,11 +454,11 @@ the NOTIFY other than by hastening the timing for when different checks
 are initiated. This security model is reused for generalized NOTIFY messages.
 
 The receipt of a notification message will, in general, cause the
-receiving party to cause an outbound query for the records of interest
-(for example, NOTIFY(CDS) will cause CDS/CDNSKEY queries). When performed
-via port 53, the size of these queries is comparable to that of the
-notification messages themselves, rendering any amplfication attempts
-futile.
+receiving party to cause one or more outbound queries for the records
+of interest (for example, NOTIFY(CDS) will cause CDS/CDNSKEY
+queries). When performed via port 53, the size of these queries is
+comparable to that of the notification messages themselves, rendering
+any amplfication attempts futile.
 
 However, when the outgoing query occurs via encrypted transport, some
 amplification is possible, both with respect to bandwidth and computational
@@ -446,16 +478,16 @@ than checking the rate limit.)
 Per {{!RFC8552}}, IANA is requested to create a new registry on the
 "Domain Name System (DNS) Parameters" IANA web page as follows:
 
-Name: Generalized DNS Notifications
+Name: DSYNC: Location of Parent-side Synchronization Mechanisms
 
 Assignment Policy: Expert Review
 
 Reference: (this document)
 
-| NOTIFY type | Scheme | Location | Reference       |
-| ----------- | ------ | -------- | --------------- |
-| CDS         |      1 | parent.  | (this document) |
-| CSYNC       |      1 | parent.  | (this document) |
+| DSYNC type | Scheme | Location | Reference       |
+| ---------- | ------ | -------- | --------------- |
+| CDS        |      1 | parent.  | (this document) |
+| CSYNC      |      1 | parent.  | (this document) |
 
 # Acknowledgements
 
