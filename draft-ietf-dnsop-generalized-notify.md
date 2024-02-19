@@ -130,7 +130,7 @@ alternatives that may or may not be more suitable in individual cases.
 
 One such alternative mechanism is when updates to the parent zone are
 managed via an API. Another mechanism is when updates are performed
-via DNS Update. 
+via DNS Update.
 
 Both these mechanisms already exist today, although they suffer from
 the lack of a general mechanism for how to locate both the target and
