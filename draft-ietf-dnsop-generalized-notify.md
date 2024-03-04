@@ -96,6 +96,21 @@ notification target. We refer to this as the "NOTIFY record".
 
 # Publication of Notification Targets
 
+To use generalized notifications, it is necessary for the sender to know
+where to direct each NOTIFY message. This section describes the
+procedure for discovering that notification target.
+
+Note that generalized NOTIFY messages are but one mechanism for
+improving the efficiency of automated delegation maintenance. Other
+alternatives alternatives, such as contacting the parent via an API or
+DNS Update ({{!RFC2136}}), may (or may not) be more suitable in
+individual cases. Like generalized notifications, they similarly require
+a means for discovering where to send the API or DNS Update requets.
+
+The scope for the publication mechanism is therefore wider than only to
+support generalized notifications, and a unified approach that works
+independently of the notification method is specified in this section.
+
 ## Design Requirements
 
 When the parent is interested in notifications for delegation
@@ -105,9 +120,10 @@ context, this service may be run by the parent zone operator themselves,
 or by a designated entity who is in charge of handling the domain's
 delegation data (such as a domain registrar).
 
-With the name of the parent zone known and the parent controlling its
-contents, the simplest solution is for the parent to publish the address
-where it prefers to have notifications sent.
+The simplest solution enabling straightforward discovery is for the
+parent to publish the address where it prefers to have notifications
+sent. Potential notification senders, knowing the name of the parent
+zone, can then simply look up that information.
 
 It is strongly desirable that the notification sender is able to figure
 out where to send the NOTIFY via a single lookup, even when ignorant of
@@ -118,30 +134,8 @@ way. (If the delegation is several labels deep, an extra query may be
 needed for identifying the parent.)
 
 These requirements suggest making the endpoint discoverable at a
-child-specific name. The record there is expected to be a wildcard
+child-specific name. The record there is expected to live at a wildcard
 name, unless the parent intends to publish a child-specific endpoint.
-
-## Multiple Synchronization Mechanisms
-
-Generalized notifications constitute one mechanism to improve the
-efficiency of automated updates to child zone delegation
-information. However, it hase become clear that there are other
-alternatives that may or may not be more suitable in individual cases.
-
-One such alternative mechanism is when updates to the parent zone are
-managed via an API. Another mechanism is when updates are performed
-via DNS Update.
-
-Both these mechanisms already exist today, although they suffer from
-the lack of a general mechanism for how to locate both the target and
-the mechanism to use for synchronization of delegation information.
-
-This is exactly the same situation as for generalized notifications.
-Hence a unified publication mechanism that supports all three known
-mechanisms, as well as potential future mechanisms, is desired.
-
-The scope for the publication mechanism is therefore wider than only
-support for generalized notifications.
 
 ## Signaling Method
 
@@ -151,8 +145,7 @@ using the record type defined in {{dsyncrdtype}}, as described in this
 section.
 
 The suggested mnemonic for the new record type is "DSYNC" and it is
-further described below. DSYNC records MUST be signed with DNSSEC.
-JOHANI: why is that?
+further described below.
 
 If the parent itself performs CDS/CDNSKEY and CSYNC processing, or if
 the parent forwards the notifications internally to the designated party
@@ -165,10 +158,10 @@ It is also possible to publish child-specific records, where the
 wildcard label is replaced by the child's FQDN with the parent zone's
 labels stripped.
 
-As an example, consider a registrar offering 2rd level domains like
-`example.se`, delegated from `se` zone. If the registrar provides the
-notification endpoint, the parent may publish this information using
-the following scheme:
+As an example, consider a registrar offering domains like `example.se`,
+delegated from `se` zone. If the registrar provides the notification
+endpoint, the parent may publish this information using the following
+scheme:
 
     example._signal.se.   IN DSYNC  CDS   scheme port endpoint.registrar.com.
 
@@ -181,14 +174,10 @@ The parent MAY synthesize records under the `_signal` domain. The
 this purpose.
 
 To accommodate indirect delegation management models (such as ICANN's
-RRR model), the parent's designated notification target may forward
-NOTIFY(CDS) messages to the registrar, e.g. via EPP or by forwarding the
-NOTIFY(CDS) message directly. The same is true also for
+RRR model), the parent's designated notification target may relay
+notifications to the registrar, e.g. via an EPP call, or by forwarding
+the NOTIFY(CDS) message directly. The same is true also for
 NOTIFY(CSYNC).
-
-JOHANI: Why do we need this? If the registrar supports receiving
-JOHANI: generalized notifications it should be announced via publication of
-JOHANI: a suitable endpoint. Why introduced NOTIFY-forwarding?
 
 
 # The DSYNC Record {#dsyncrdtype}
@@ -212,9 +201,10 @@ supported values.
 
 Scheme
 : The scheme for locating the desired notification address.  The range
-is 0-255. This is an 8 bit unsigned integer. The value 0 is an
-error. The value 1 is described in this document and all other values
-are currently unspecified.
+is 0-255. This is an 8 bit unsigned integer. The value 0 is an error,
+and values 128-255 are reserved for private use. The value 1 is
+described in this document, and all other values are currently
+unspecified.
 
 Port
 : The port on the target host of the notification service. The
@@ -289,7 +279,7 @@ Delegation maintenance NOTIFY messages MUST be formatted as described in
 To address the CDS/CDNSKEY dichotomy, the NOTIFY(CDS) message (with
 `qtype=CDS`) is defined to indicate any child-side changes pertaining
 to an upcoming update of DS records. Upon receipt of NOTIFY(CDS), the
-recipient (the parent or a registrar) SHOULD initiate the same DNS
+recipient (the parent registry or a registrar) SHOULD initiate the same DNS
 lookups and verifications that would otherwise be triggered based on a
 timer.
 
@@ -309,25 +299,26 @@ the notification sender MUST perform the following procedure:
 1. Construct the lookup name, by injecting the `_signal` label after the
    first label of the delegation owner name.
 
-2. Perform a DNSSEC-validated lookup of type DSYNC for the lookup name.
-   If a DSYNC RRset is retrieved, return it.
+2. Perform a lookup of type DSYNC for the lookup name, and validate the
+   response if DNSSEC is enabled. If a DSYNC RRset results, return it.
 
-3. When a denial of existence is returned in response to the DSYNC
-   query:
+3. When the query resulted in a negative response:
 
-   - If the negative response's RRSIG record indicates that the parent
-     is more than one label away, construct a new lookup name by
+   - If the negative response indicates that the parent is more than one
+     label away from the `_signal` label, construct a new lookup name by
      inserting the `_signal` label into the delegation owner name just
-     before the Signer's Name as given by the RRSIG, and go to step 2.
+     before the parent zone labels inferred from the negative response,
+     and go to step 2.
 
-     For example, a DSYNC query relating to the delegation of
-     `example.net.se` might first have been directed at
-     `example._signal.net.se`, after which a query for
-     `example.net._signal.se` might be required;
+     For example, `city.ise.mie.jp` is delegated from `jp` (and not
+     from `ise.mie.jp` or `mie.jp`!). The initial DSYNC query relating
+     to it is thus directed at `city._signal.ise.mie.jp`. This is
+     expected to result in a negative response from `jp`, and another
+     query for `city.ise.mie._signal.jp` is then required;
 
    - Otherwise, if the lookup name has any labels in front of the
      `_signal` label, remove them to construct a new lookup name (such
-     as `_signal.se`), and go to step 2.
+     as `_signal.jp`), and go to step 2.
      (This is to enable zone structures without wildcards.)
 
    - Otherwise, return null (no notification target available).
@@ -338,14 +329,26 @@ When changing a CDS/CDNSKEY/CSYNC RRset in the child zone, the DNS
 operator SHOULD send a suitable NOTIFY message to the endpoint located
 as described in the previous section.
 
+A NOTIFY message can only carry information about changes concerning one
+child zone. When there are changes to several child zones, the sender
+MUST send a separate notification for each one.
+
 Because of the security model where a notification by itself never
 causes a change (it can only speed up the time until the next
 check for the same thing), the sender's identity is not crucial.
-
 This opens up the possibility of having an arbitrary party (e.g., a
 side-car service) send the notifications to the parent, thereby enabling
-this new functionality even before the emergence of support for
-generalized DNS notifications in the name servers used for signing.
+this functionality even before the emergence of native support in
+nameserver software.
+
+While the receiving side will often be a scanning service provided by
+the registry itself, it is expected that in the ICANN RRR model, some
+registries will prefer registrars to conduct CDS/CDNSKEY processing. In
+such cases, the registrar notification endpoint should be published in
+the parent zone, enabling the child to direct their notifications to the
+appropriate target. From the perspective of the child, it is
+inconsequential who's in charge of processing the notification: the
+NOTIFY message is simply sent to the published address.
 
 ### Timing
 
@@ -366,7 +369,7 @@ It is therefore RECOMMENDED that the child delays sending NOTIFY
 messages to the recipient until a consistent public view of the pertinent
 records is ensured.
 
-### Rationale For Staying With the DNS Message Format
+### Rationale for Using the DNS Message Format
 
 (RFC Editor: This subsection is to be removed before publication)
 
@@ -388,23 +391,12 @@ port 53.
 
 ## Processing of NOTIFY Messages
 
-TODO: how to interpret multiple DSYNC records?
-JOHANI: what is the question?
+NOTIFY(CDS) messages carrying notification payloads (records) for
+several child zones MUST be discarded, as sending them is an error.
 
-While the receiving side will often be a scanning service provided by
-the registry itself, it is expected that in the ICANN RRR model, some
-registries will prefer registrars to conduct CDS/CDNSKEY scans.
-
-For such parents, the suitable registrar notification endpoint should
-be published in the parent zone, thereby enabling child zones to
-direct their generalized notifications to the appropriate target.
-
-Such internal processing is inconsequential from the perspective of
-the child: the NOTIFY message is simply sent to the notification address.
-
-Upon receipt of a (potentially forwarded) NOTIFY(CDS) for a particular
-child zone at the published address for CDS notifications, the parent
-has two options:
+Upon receipt of a (potentially forwarded) valid NOTIFY(CDS) message for
+a particular child zone at the published address for CDS notifications,
+the receiving side (parent registry or registrar) has two options:
 
   1. Schedule an immediate check of the CDS and CDNSKEY RRsets as
      published by that particular child zone.
@@ -449,28 +441,34 @@ relying on the information in the NOTIFY message in any way, and instead
 only using it to "enter the state it would if the zone's refresh timer
 had expired" ({{Section 4.7 of !RFC1996}}).
 
-It therefore seems impossible to affect the behaviour of the recipient of
+This security model is reused for generalized NOTIFY messages. It
+therefore seems impossible to affect the behaviour of the recipient of
 the NOTIFY other than by hastening the timing for when different checks
-are initiated. This security model is reused for generalized NOTIFY messages.
+are initiated.
 
 The receipt of a notification message will, in general, cause the
-receiving party to cause one or more outbound queries for the records
+receiving party to perform one or more outbound queries for the records
 of interest (for example, NOTIFY(CDS) will cause CDS/CDNSKEY
-queries). When performed via port 53, the size of these queries is
-comparable to that of the notification messages themselves, rendering
-any amplfication attempts futile.
+queries). When done via port 53, the size of these queries is comparable
+to that of the NOTIFY messages themselves, rendering any amplification
+attempts futile. The number of queries triggered per notification is
+also limited by the requirement that a NOTIFY message can refer to one
+child only.
 
 However, when the outgoing query occurs via encrypted transport, some
-amplification is possible, both with respect to bandwidth and computational
-resources. Receivers therefore MUST implement rate limiting for notification
-processing. It is RECOMMENDED to configure rate limiting independently for
-both the notification's source IP address and the name of the zone that is
-conveyed in the notification message (e.g., the child zone).
+amplification is possible, both with respect to bandwidth and
+computational burden. In this case, the usual principle of bounding the
+work, even under unreasonable events, applies.
 
-Rate limiting will also mitigate processing load of garbage notifications.
-Alternative solutions appear significantly more expensive. (For example,
-validating the signature of a signed notification is much more expensive
-than checking the rate limit.)
+Receivers therefore MUST implement rate limiting for notification
+processing. It is RECOMMENDED to configure rate limiting independently
+for both the notification's source IP address and the name of the zone
+that is conveyed in the NOTIFY message. Rate limiting also mitigates
+processing load from garbage notifications.
+
+Alternative solutions (such as signing notifications and validating
+their signatures) appear significantly more expensive without tangible
+benefit.
 
 
 # IANA Considerations
@@ -478,16 +476,17 @@ than checking the rate limit.)
 Per {{!RFC8552}}, IANA is requested to create a new registry on the
 "Domain Name System (DNS) Parameters" IANA web page as follows:
 
-Name: DSYNC: Location of Parent-side Synchronization Mechanisms
+Name: DSYNC: Location of Synchronization Endpoints
 
 Assignment Policy: Expert Review
 
 Reference: (this document)
 
-| DSYNC type | Scheme | Location | Reference       |
-| ---------- | ------ | -------- | --------------- |
-| CDS        |      1 | parent.  | (this document) |
-| CSYNC      |      1 | parent.  | (this document) |
+| DSYNC type | Scheme  | Purpose                | Reference       |
+| ---------- | ------- | ---------------------- | --------------- |
+| CDS        |       1 | Delegation management  | (this document) |
+| CSYNC      |       1 | Delegation management  | (this document) |
+|            | 128-255 | Reserved (private use) | (this document) |
 
 # Acknowledgements
 
@@ -548,13 +547,17 @@ the detailed specification is left for future work.
 
 * draft-ietf-dnsop-generalized-notify-01
 
+> Reserve scheme values 128-255
+
+> Rename NOTIFY rrtype to DSYNC (to distinguish from NOTIFY message)
+
 > Describe endpoint discovery
 
 > Discussion on garbage notifications
 
 > More discussion on amplification risks
 
-> Clean-up, remove multi-signer use-case
+> Clean-up, editorial changes
 
 * draft-ietf-dnsop-generalized-notify-00
 
