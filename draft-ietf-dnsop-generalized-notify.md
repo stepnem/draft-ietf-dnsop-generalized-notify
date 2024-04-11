@@ -484,6 +484,7 @@ Reference: (this document)
 
 | DSYNC type | Scheme  | Purpose                | Reference       |
 | ---------- | ------- | ---------------------- | --------------- |
+|            |       0 | Reserved (unavailable) | (this document) |
 | CDS        |       1 | Delegation management  | (this document) |
 | CSYNC      |       1 | Delegation management  | (this document) |
 |            | 128-255 | Reserved (private use) | (this document) |
@@ -544,6 +545,10 @@ the detailed specification is left for future work.
 
 
 # Change History (to be removed before publication)
+
+* draft-ietf-dnsop-generalized-notify-02
+
+> Reserve scheme value 0
 
 * draft-ietf-dnsop-generalized-notify-01
 
