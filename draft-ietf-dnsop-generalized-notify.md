@@ -36,7 +36,7 @@ informative:
 
 --- abstract
 
-This document extends the use of DNS NOTIFY ({{!RFC1996}} beyond conventional
+This document extends the use of DNS NOTIFY {{!RFC1996}} beyond conventional
 zone transfer hints, bringing the benefits of ad-hoc notifications to DNS
 delegation maintenance in general.  Use cases include DNSSEC key rollovers
 hints, and quicker changes to a delegation's NS record set.
@@ -492,7 +492,7 @@ Reference: (this document)
 # Acknowledgements
 
 Joe Abley, Mark Andrews, Christian Elmerot, Ólafur Guðmundsson, Paul
-Wouters, Brian Dickson
+Wouters, Brian Dickson, Warren Kumari
 
 --- back
 
@@ -547,6 +547,8 @@ the detailed specification is left for future work.
 # Change History (to be removed before publication)
 
 * draft-ietf-dnsop-generalized-notify-02
+
+> Editorial nits
 
 > Reserve scheme value 0
 
