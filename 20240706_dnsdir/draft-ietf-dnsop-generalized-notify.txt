@@ -78,8 +78,9 @@ Table of Contents
    4.  Delegation Maintenance: CDS/CDNSKEY and CSYNC Notifications
      4.1.  Endpoint Discovery
      4.2.  Sending Notifications
-       4.2.1.  Timing
-       4.2.2.  Rationale for Using the DNS Message Format
+       4.2.1.  Timeouts and Error Handling
+       4.2.2.  Roles
+       4.2.3.  Rationale for Using the DNS Message Format
      4.3.  Processing of NOTIFY Messages
    5.  Security Considerations
    6.  IANA Considerations
@@ -145,11 +146,11 @@ Table of Contents
 
 1.2.  Requirements Notation
 
-   The key words "*MUST*", "*MUST NOT*", "*REQUIRED*", "*SHALL*",
-   "*SHALL NOT*", "*SHOULD*", "*SHOULD NOT*", "*RECOMMENDED*", "*NOT
-   RECOMMENDED*", "*MAY*", and "*OPTIONAL*" in this document are to be
-   interpreted as described in BCP 14 [RFC2119] [RFC8174] when, and only
-   when, they appear in all capitals, as shown here.
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
 
 2.  DSYNC RR Type
 
@@ -179,10 +180,10 @@ Table of Contents
    Port  The port on the target host of the notification service.  This
       is a 16 bit unsigned integer in network byte order.
 
-   Target  The uncompressed domain name of the target host providing the
-      service of listening for generalized notifications of the
-      specified type.  This name MUST resolve to one or more address
-      records.
+   Target  The fully-qualified, uncompressed domain name of the target
+      host providing the service of listening for generalized
+      notifications of the specified type.  This name MUST resolve to
+      one or more address records.
 
 2.2.  Semantics
 
@@ -363,8 +364,40 @@ Table of Contents
    one child zone.  When there are changes to several child zones, the
    sender MUST send a separate notification for each one.
 
-   When the NOTIFY is not acklowledged by the receiving party, the
-   sender SHOULD use the retry mechanism
+   When a primary name server publishes a new RRset in the child, there
+   typically is a time delay until all publicly visible copies of the
+   zone will have been updated.  If the primary sends a NOTIFY at the
+   exact time of publication of the new zone, there is a potential for
+   the parent to attempt CDS/CDNSKEY/CSYNC processing before the updated
+   zone is visible.  In this case the parent may draw the wrong
+   conclusion (“the CDS RRset has not been updated”).
+
+   It is therefore RECOMMENDED that the child delays sending NOTIFY
+   messages to the recipient until a consistent public view of the
+   pertinent records is ensured.
+
+4.2.1.  Timeouts and Error Handling
+
+   NOTIFY messages are expected to elicit a response from the recipient
+   ([RFC1996] Section 4.7).  If no response is received, senders SHOULD
+   employ the same logic as for SOA notifications ([RFC1996] Sections
+   3.5 and 3.6).
+
+   The parent's attempt to act upon the delegation update request may
+   fail for a variety of reasons (e.g., due to violation of the
+   continuity requirement set forth in [RFC7344] Section 4.1).  Such
+   failures may occur asynchronously, even after the NOTIFY response has
+   arrived.
+
+   In order to learn about such failures, senders MAY include an
+   [RFC9567] EDNS0 Report-Channel option in the NOTIFY message to
+   request the receiving side to report any errors by making a report
+   query with an appropriate extended DNS error code as described in
+   [RFC8914].  When including this EDNS0 option, its agent domain MUST
+   be subordinate or equal to one of the NS hostnames, as listed at in
+   the child's delegation in the parent zone.
+
+4.2.2.  Roles
 
    Because of the security model where a notification by itself never
    causes a change (it can only speed up the time until the next check
@@ -391,26 +424,7 @@ Table of Contents
    records, preferably using automation features of common authoritative
    nameserver software for ensuring consistency.
 
-4.2.1.  Timing
-
-   When a primary name server publishes a new RRset in the child, there
-   will be a time delay until all publicly visible copies of the zone
-   will have been updated.  If the primary sends a NOTIFY at the exact
-   time of publication of the new zone, there is a potential for the
-   parent to attempt CDS/CDNSKEY/CSYNC processing before the updated
-   zone is visible.  In this case the parent may draw the wrong
-   conclusion (“the CDS RRset has not been updated”).
-
-   Having a delay between the publication of the new data and the check
-   for the new data would alleviate this issue.  However, as the parent
-   has no way of knowing how quickly the child zone propagates, the
-   appropriate amount of delay is uncertain.
-
-   It is therefore RECOMMENDED that the child delays sending NOTIFY
-   messages to the recipient until a consistent public view of the
-   pertinent records is ensured.
-
-4.2.2.  Rationale for Using the DNS Message Format
+4.2.3.  Rationale for Using the DNS Message Format
 
    (RFC Editor: This subsection is to be removed before publication)
 
@@ -440,8 +454,17 @@ Table of Contents
    notifications, the receiving side (parent registry or registrar) has
    two options:
 
-   1.  Schedule an immediate check of the CDS and CDNSKEY RRsets as
-       published by that particular child zone.
+   1.  Acknowledge receipt by sending a NOTIFY response as described in
+       [RFC1996] Section 4.7 (identical to NOTIFY query, bit with QR bit
+       set) and schedule an immediate check of the CDS and CDNSKEY
+       RRsets as published by that particular child zone.
+
+       If the NOTIFY message contains an [RFC9567] EDNS0 Report-Channel
+       option with an agent domain subordinate or equal to one of the NS
+       hostnames listed in the delegation, the processing party SHOULD
+       report any errors occuring during CDS/CDNSKEY processing by
+       sending a report query with an appropriate extended DNS error
+       code as described in [RFC8914].
 
        If the check finds that the CDS/CDNSKEY RRset has indeed changed,
        the parent MAY reset the scanning timer for children for which
@@ -457,9 +480,12 @@ Table of Contents
        scanning assumption, and MAY therefore use a low-frequency
        scanning schedule in default mode.
 
-   2.  Ignore the notification, in which case the system works exactly
-       as before.  (One reason to do this may be a rate limit, see
-       Section 5.)
+   2.  Do not act upon the notification.  To prevent retries, recipients
+       SHOULD acknowledge the notification by sending a NOTIFY response
+       even when otherwise ignoring the request, combined with a report
+       query if feasible (see above).  One reason to do this may be a
+       rate limit (see Section 5), in which case "Blocked" (15) maybe a
+       suitable extended DNS error code.
 
    If the parent implements the first option, the convergence time (time
    between publication of a new CDS/CDNSKEY record in the child and
@@ -566,8 +592,9 @@ Table of Contents
 
 7.  Acknowledgements
 
-   Joe Abley, Mark Andrews, Christian Elmerot, Ólafur Guðmundsson, Paul
-   Wouters, Brian Dickson, Warren Kumari, Patrick Mevzek
+   In order of first contribution: Joe Abley, Mark Andrews, Christian
+   Elmerot, Ólafur Guðmundsson, Paul Wouters, Brian Dickson, Warren
+   Kumari, Patrick Mevzek, Tim Wicinski
 
 8.  References
 
@@ -602,11 +629,6 @@ Table of Contents
               Extensions", RFC 4035, DOI 10.17487/RFC4035, March 2005,
               <https://www.rfc-editor.org/rfc/rfc4035>.
 
-   [RFC6781]  Kolkman, O., Mekking, W., and R. Gieben, "DNSSEC
-              Operational Practices, Version 2", RFC 6781,
-              DOI 10.17487/RFC6781, December 2012,
-              <https://www.rfc-editor.org/rfc/rfc6781>.
-
    [RFC7344]  Kumari, W., Gudmundsson, O., and G. Barwood, "Automating
               DNSSEC Delegation Trust Maintenance", RFC 7344,
               DOI 10.17487/RFC7344, September 2014,
@@ -615,11 +637,6 @@ Table of Contents
    [RFC7477]  Hardaker, W., "Child-to-Parent Synchronization in DNS",
               RFC 7477, DOI 10.17487/RFC7477, March 2015,
               <https://www.rfc-editor.org/rfc/rfc7477>.
-
-   [RFC7583]  Morris, S., Ihren, J., Dickinson, J., and W. Mekking,
-              "DNSSEC Key Rollover Timing Considerations", RFC 7583,
-              DOI 10.17487/RFC7583, October 2015,
-              <https://www.rfc-editor.org/rfc/rfc7583>.
 
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
@@ -630,10 +647,14 @@ Table of Contents
               BCP 222, RFC 8552, DOI 10.17487/RFC8552, March 2019,
               <https://www.rfc-editor.org/rfc/rfc8552>.
 
-   [RFC8901]  Huque, S., Aras, P., Dickinson, J., Vcelak, J., and D.
-              Blacka, "Multi-Signer DNSSEC Models", RFC 8901,
-              DOI 10.17487/RFC8901, September 2020,
-              <https://www.rfc-editor.org/rfc/rfc8901>.
+   [RFC8914]  Kumari, W., Hunt, E., Arends, R., Hardaker, W., and D.
+              Lawrence, "Extended DNS Errors", RFC 8914,
+              DOI 10.17487/RFC8914, October 2020,
+              <https://www.rfc-editor.org/rfc/rfc8914>.
+
+   [RFC9567]  Arends, R. and M. Larson, "DNS Error Reporting", RFC 9567,
+              DOI 10.17487/RFC9567, April 2024,
+              <https://www.rfc-editor.org/rfc/rfc9567>.
 
 8.2.  Informative References
 
@@ -643,6 +664,21 @@ Table of Contents
               dnsop-dnssec-automation-02, 22 October 2023,
               <https://datatracker.ietf.org/doc/html/draft-ietf-dnsop-
               dnssec-automation-02>.
+
+   [RFC6781]  Kolkman, O., Mekking, W., and R. Gieben, "DNSSEC
+              Operational Practices, Version 2", RFC 6781,
+              DOI 10.17487/RFC6781, December 2012,
+              <https://www.rfc-editor.org/rfc/rfc6781>.
+
+   [RFC7583]  Morris, S., Ihren, J., Dickinson, J., and W. Mekking,
+              "DNSSEC Key Rollover Timing Considerations", RFC 7583,
+              DOI 10.17487/RFC7583, October 2015,
+              <https://www.rfc-editor.org/rfc/rfc7583>.
+
+   [RFC8901]  Huque, S., Aras, P., Dickinson, J., Vcelak, J., and D.
+              Blacka, "Multi-Signer DNSSEC Models", RFC 8901,
+              DOI 10.17487/RFC8901, September 2020,
+              <https://www.rfc-editor.org/rfc/rfc8901>.
 
 Appendix A.  Efficiency and Convergence Issues in DNS Scanning
 
@@ -696,6 +732,8 @@ A.2.  Similar Issues for DS Maintenance and Beyond
 Appendix B.  Change History (to be removed before publication)
 
    *  draft-ietf-dnsop-generalized-notify-02
+
+      Nits by Tim Wicinski
 
       Dnsdir feedback
 
