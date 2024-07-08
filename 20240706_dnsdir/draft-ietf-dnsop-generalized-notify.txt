@@ -5,10 +5,10 @@
 DNSOP Working Group                                          J. Stenstam
 Internet-Draft                           The Swedish Internet Foundation
 Intended status: Standards Track                            P. Thomassen
-Expires: 7 January 2025                deSEC, Secure Systems Engineering
+Expires: 9 January 2025                deSEC, Secure Systems Engineering
                                                                J. Levine
                                                            Standcore LLC
-                                                             6 July 2024
+                                                             8 July 2024
 
 
                      Generalized DNS Notifications
@@ -48,7 +48,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 7 January 2025.
+   This Internet-Draft will expire on 9 January 2025.
 
 Copyright Notice
 
@@ -511,16 +511,15 @@ Table of Contents
    their signatures) appear significantly more expensive without
    tangible benefit.
 
-   The specification does not require DSYNC records to be signed with
-   DNSSEC, as to not exclude schemes that are otherwise authenticated
-   (such as via TSIG).  The effects from spoofing the response to a
-   DSYNC query are that notifications are prevented from reaching their
-   legitimate target and that a different party may receive unsolicited
-   notifications; both of these, however, can also be achieved in the
-   presence of DNSSEC.  The illegitimate target is also enabled to learn
-   notification contents in real-time, which might constitute a privacy
-   problem for the sender.  If so, the sender may choose to ignore
-   unsigned DSYNC records.
+   In order to facilitate schemes that are authenticated outside of
+   DNSSEC (such as via SIG(0)), zones containing DSYNC records are not
+   required to be signed.  Spoofed DSYNC responses would prevent
+   notifications from reaching their legitimate target, and a different
+   party may receive unsolicited notifications; both effects, however,
+   can also be achieved in the presence of DNSSEC.  The illegitimate
+   target is also enabled to learn notification contents in real-time,
+   which may be a privacy concern for the sender.  If so, the sender may
+   choose to ignore unsigned DSYNC records.
 
 6.  IANA Considerations
 
