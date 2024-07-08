@@ -387,15 +387,15 @@ Table of Contents
    fail for a variety of reasons (e.g., due to violation of the
    continuity requirement set forth in [RFC7344] Section 4.1).  Such
    failures may occur asynchronously, even after the NOTIFY response has
-   arrived.
+   been sent.
 
    In order to learn about such failures, senders MAY include an
    [RFC9567] EDNS0 Report-Channel option in the NOTIFY message to
    request the receiving side to report any errors by making a report
    query with an appropriate extended DNS error code as described in
    [RFC8914].  When including this EDNS0 option, its agent domain MUST
-   be subordinate or equal to one of the NS hostnames, as listed at in
-   the child's delegation in the parent zone.
+   be subordinate or equal to one of the NS hostnames, as listed in the
+   child's delegation in the parent zone.
 
 4.2.2.  Roles
 
@@ -455,7 +455,7 @@ Table of Contents
    two options:
 
    1.  Acknowledge receipt by sending a NOTIFY response as described in
-       [RFC1996] Section 4.7 (identical to NOTIFY query, bit with QR bit
+       [RFC1996] Section 4.7 (identical to NOTIFY query, but with QR bit
        set) and schedule an immediate check of the CDS and CDNSKEY
        RRsets as published by that particular child zone.
 
