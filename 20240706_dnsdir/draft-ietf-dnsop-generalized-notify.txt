@@ -737,6 +737,8 @@ Appendix B.  Change History (to be removed before publication)
 
       Dnsdir feedback
 
+      Specify timeout and error handling
+
       Editorial nits
 
       Reserve scheme value 0
