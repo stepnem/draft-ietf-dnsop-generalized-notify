@@ -71,8 +71,8 @@ Future extension for further use cases (such as multi-signer key exchange)
 is possible.
 
 Readers are expected to be familiar with DNSSEC, including {{!RFC4033}},
-{{!RFC4034}}, {{!RFC4035}}, {{!RFC6781}}, {{!RFC7344}}, {{!RFC7477}},
-{{!RFC7583}}, and {{!RFC8901}}.
+{{!RFC4034}}, {{!RFC4035}}, {{?RFC6781}}, {{!RFC7344}}, {{!RFC7477}},
+{{?RFC7583}}, and {{?RFC8901}}.
 
 ## Design Requirements
 
@@ -99,11 +99,7 @@ can then simply look up that information (see {{discovery}}).
 
 ## Requirements Notation
 
-The key words "**MUST**", "**MUST NOT**", "**REQUIRED**", "**SHALL**", "**SHALL
-NOT**", "**SHOULD**", "**SHOULD NOT**", "**RECOMMENDED**", "**NOT
-RECOMMENDED**", "**MAY**", and "**OPTIONAL**" in this document are to be
-interpreted as described in BCP 14 {{!RFC2119}} {{!RFC8174}} when, and only
-when, they appear in all capitals, as shown here.
+{::boilerplate bcp14}
 
 # DSYNC RR Type {#dsyncrdtype}
 
@@ -540,8 +536,9 @@ Reference
 
 # Acknowledgements
 
+In order of first contribution:
 Joe Abley, Mark Andrews, Christian Elmerot, Ólafur Guðmundsson, Paul
-Wouters, Brian Dickson, Warren Kumari, Patrick Mevzek
+Wouters, Brian Dickson, Warren Kumari, Patrick Mevzek, Tim Wicinski
 
 --- back
 
@@ -596,6 +593,8 @@ conceivable, the detailed specification is left for future work.
 # Change History (to be removed before publication)
 
 * draft-ietf-dnsop-generalized-notify-02
+
+> Nits by Tim Wicinski
 
 > Dnsdir feedback
 
