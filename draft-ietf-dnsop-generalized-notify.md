@@ -333,23 +333,6 @@ A NOTIFY message can only carry information about changes concerning one
 child zone. When there are changes to several child zones, the sender
 MUST send a separate notification for each one.
 
-Because of the security model where a notification by itself never
-causes a change (it can only speed up the time until the next
-check for the same thing), the sender's identity is not crucial.
-This opens up the possibility of having an arbitrary party (e.g., a
-side-car service) send the notifications to the parent, thereby enabling
-this functionality even before the emergence of native support in
-nameserver software.
-
-While the receiving side will often be a scanning service provided by
-the registry itself, it is expected that in the ICANN RRR model, some
-registries will prefer registrars to conduct CDS/CDNSKEY processing. In
-such cases, the registrar notification endpoint should be published in
-the parent zone, enabling the child to direct their notifications to the
-appropriate target. From the perspective of the child, it is
-inconsequential who's in charge of processing the notification: the
-NOTIFY message is simply sent to the published address.
-
 ### Timing
 
 When a primary name server publishes a new RRset in the child, there
@@ -368,6 +351,46 @@ appropriate amount of delay is uncertain.
 It is therefore RECOMMENDED that the child delays sending NOTIFY
 messages to the recipient until a consistent public view of the pertinent
 records is ensured.
+
+### Timeouts and Error Handling
+
+NOTIFY messages are expected to elicit a response from the recipient
+({{!RFC1996}} Section 4.7). If no response is received, senders SHOULD
+employ the same logic as for SOA notifications ({{!RFC1996}} Sections
+3.5 and 3.6).
+
+The parent's attempt to act upon the delegation update request may fail
+for a variety of reasons (e.g., due to violation of the continuity
+requirement set forth in {{!RFC7344}} Section 4.1). Such failures may
+occur asynchronously, even after the NOTIFY response has been sent.
+
+In order to learn about such failures, senders MAY include an
+{{!RFC9567}} EDNS0 Report-Channel option in the NOTIFY message to
+request the receiving side to report any errors by making a report query
+with an appropriate extended DNS error code as described in
+{{!RFC8914}}. When including this EDNS0 option, its agent domain MUST
+be subordinate or equal to one of the NS hostnames, as listed in the
+child's delegation in the parent zone.
+
+### Roles
+
+Because of the security model where a notification by itself never
+causes a change (it can only speed up the time until the next
+check for the same thing), the sender's identity is not crucial.
+This opens up the possibility of having an arbitrary party (e.g., a
+side-car service) send the notifications, enabling this functionality
+even before the emergence of native support in nameserver software.
+
+While the CDS/CDNSKEY/CSYNC processing following the receipt of a NOTIFY
+will often be performed by the registry, the protocol anticipates that
+in some contexts (especially for ICANN gTLDs), registrars may take on
+the task. In such cases, the parent may publish the current registrar
+notification endpoint, enabling notifications to be directed to the
+appropriate target. The mechanics of how this is arranged between
+registry and registrar are out of scope for this document; the protocol
+only offers the possibility to arrange things such that from the child
+perspective, it is inconsequential how the parent-side parties are
+organized: notifications are simply sent to the published address.
 
 ### Rationale for Using the DNS Message Format
 
@@ -398,8 +421,17 @@ Upon receipt of a (potentially forwarded) valid NOTIFY(CDS) message for
 a particular child zone at the published address for CDS notifications,
 the receiving side (parent registry or registrar) has two options:
 
-  1. Schedule an immediate check of the CDS and CDNSKEY RRsets as
-     published by that particular child zone.
+  1. Acknowledge receipt by sending a NOTIFY response as described in
+     {{!RFC1996}} Section 4.7 (identical to NOTIFY query, but with QR
+     bit set) and schedule an immediate check of the CDS and CDNSKEY
+     RRsets as published by that particular child zone.
+
+     If the NOTIFY message contains an {{!RFC9567}} EDNS0 Report-Channel
+     option with an agent domain subordinate or equal to one of the NS
+     hostnames listed in the delegation, the processing party SHOULD
+     report any errors occuring during CDS/CDNSKEY processing by sending
+     a report query with an appropriate extended DNS error code as
+     described in {{!RFC8914}}.
 
      If the check finds that the CDS/CDNSKEY RRset has indeed changed,
      the parent MAY reset the scanning timer for children for which
@@ -415,9 +447,12 @@ the receiving side (parent registry or registrar) has two options:
      scanning assumption, and MAY therefore use a low-frequency
      scanning schedule in default mode.
 
-  2. Ignore the notification, in which case the system works exactly
-     as before. (One reason to do this may be a rate limit, see
-     {{security}}.)
+  2. Do not act upon the notification. To prevent retries, recipients
+     SHOULD acknowledge the notification by sending a NOTIFY response
+     even when otherwise ignoring the request, combined with a report
+     query if feasible (see above). One reason to do this may be a rate
+     limit (see {{security}}), in which case "Blocked" (15) maybe a
+     suitable extended DNS error code.
 
 If the parent implements the first option, the convergence time (time
 between publication of a new CDS/CDNSKEY record in the child and
@@ -547,6 +582,8 @@ the detailed specification is left for future work.
 # Change History (to be removed before publication)
 
 * draft-ietf-dnsop-generalized-notify-02
+
+> Specify timeout and error handling
 
 > Editorial nits
 
